@@ -22,14 +22,14 @@ function Admindashboard() {
         </div>
       </div>
       <div className="basis-[70%] flex-grow flex flex-col items-center overflow-scroll  ">
-        <h2 className="font-bold text-[2rem] text-center mb-[4rem] mt-[5rem] font-poppins px-2">
+        <h2 className="font-bold text-[2rem] text-center mb-[4rem] mt-[5rem] font-poppins px-2 2xl:text-[3rem]">
           Admin Dashboard
         </h2>
         <div className="flex flex-col items-center justify-center xl:w-[90%] lg:w-[70%] md:w-[90%] w-[90%] shadow-lg hover:shadow-md transition-shadow px-4 py-4">
-          <h3 className="font-bold text-[#F95D5D] text-[1.6rem] mb-[0.5rem] text-center text-nowrap">
+          <h3 className="font-bold text-[#F95D5D] xl:text-[1.6rem] mb-[0.5rem] text-center text-nowrap 2xl:text-[2rem] sm:text-[1rem]">
             KYC Verification Dashboard for AmbuRakshak Drivers
           </h3>
-          <p className="text-center text-gray-600 mb-[2rem]  ">
+          <p className="text-center text-gray-600 mb-[2rem] md:text-[1rem] xl:ml-8 mr-8 2xl:text-lg sm:text-sm  ">
             The<b> KYC Detailed Dashboard</b> for <b>AmbuRakshak </b>Drivers
             provides a comprehensive overview of each driver's verification
             status, ensuring transparency and compliance
@@ -43,8 +43,8 @@ function Admindashboard() {
 
         {/* // terms and conditions */}
         
-        <div className="flex flex-col mt-14    justify-center items-center ">
-          <div className=" flex gap-2  ">
+        <div className="flex flex-col mt-14 2xl:mt-44 justify-center items-center  ">
+          <div className=" space-x-2  ">
             <input type="checkbox" className="accent-red-500" id="terms" />
             <label htmlFor="terms" className="text-[1rem] ">
               Terms & Conditions apply
