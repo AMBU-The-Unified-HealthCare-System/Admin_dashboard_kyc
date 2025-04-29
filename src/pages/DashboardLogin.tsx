@@ -1,6 +1,6 @@
 import KYCForm from "../components/Kyc";
 
-function Admindashboard() {
+const  AdminLogin=()=> {
   return (
     <div className="flex h-[100vh]">
       <div className="lg:basis-[37%] sm:block hidden flex-shrink">
@@ -62,4 +62,4 @@ function Admindashboard() {
   );
 }
 
-export default Admindashboard;
+export default AdminLogin;
