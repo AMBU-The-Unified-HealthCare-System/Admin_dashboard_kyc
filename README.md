@@ -1,54 +1,125 @@
-# React + TypeScript + Vite
+# Admin KYC Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A secure, centralized real-time verification system to streamline and monitor driver KYC (Know Your Customer) submissions efficiently across the platform.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 📌 Table of Contents
 
-## Expanding the ESLint configuration
+- [Introduction](#introduction)
+- [Purpose](#purpose)
+- [How It Works](#how-it-works)
+  - [Driver Login and KPIs](#driver-login-and-kpis)
+  - [Verification Status](#verification-status)
+- [Driver KYC Details Structure](#driver-kyc-details-structure)
+- [Document Verification Process](#document-verification-process)
+  - [Viewing Submitted Documents](#viewing-submitted-documents)
+  - [Approving or Rejecting Documents](#approving-or-rejecting-documents)
+- [KYC Completion Measurement](#kyc-completion-measurement)
+- [Role-Based Access Control (RBAC)](#role-based-access-control-rbac)
+- [System Components Summary](#system-components-summary)
+- [Future Enhancements](#future-enhancements)
+- [Conclusion](#conclusion)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## 📖 Introduction
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**Admin KYC Dashboard** is a real-time platform that manages and monitors driver onboarding by securely tracking login and KYC document verification processes.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+## 🎯 Purpose
+
+The Admin KYC Dashboard aims to eliminate manual, insecure verification systems. It empowers administrators to:
+
+- Track driver logins and KYC submissions
+- Validate uploaded documents securely
+- Approve or reject driver onboarding decisions based on verified data
+
+---
+
+## ⚙️ How It Works
+
+### Driver Login and KPIs
+
+When a driver signs up and logs in:
+
+- **Login Drivers**: Indicates registered drivers, even if subsequent steps aren't completed.
+- **KPIs Tracked**:
+  - **L-Submission**: Tracks driver login info submission.
+  - **K-Submission**: Tracks submission and approval status of KYC documents.
+
+### Verification Status
+
+- **V1 Approval**: Login details verified.
+- **V2 Approval**: Full KYC and login information verified and matched.
+
+---
+
+## 📋 Driver KYC Details Structure
+
+### Data Layout
+
+- **Rows**: Each row represents an individual driver.
+- **Columns**: Each column represents a specific document (e.g., Aadhaar, PAN, License).
+
+---
+
+## 📝 Document Verification Process
+
+### Viewing Submitted Documents
+
+- A 👁️ (eye) icon is available next to each document.
+- Clicking the icon previews the document via **Cashfree API** integration.
+
+### Approving or Rejecting Documents
+
+- Admins **must** add comments while approving or rejecting documents.
+- Comments ensure transparency and auditability.
+
+---
+
+## ✅ KYC Completion Measurement
+
+- Each document is tracked to calculate a percentage completion.
+- Upon reaching **100% verification**, a **final overall comment** and decision (Approved/Rejected) is mandatory.
+- **Rule**: If any single attribute is rejected, the entire KYC is rejected.
+
+---
+
+## 🔐 Role-Based Access Control (RBAC)
+
+- Ensures only authorized admins can access sensitive data.
+- Role-based permissions include:
+  - **View-Only**
+  - **Verifier**
+  - **Approver**
+
+---
+
+## 📊 System Components Summary
+
+| Feature               | Description                                                |
+|-----------------------|------------------------------------------------------------|
+| Dashboard View        | Displays login and KYC status in real-time                 |
+| Document Verification | Preview via Eye Icon, Approve/Reject with mandatory comments |
+| KYC Status Tracking   | V1 (Login Approved), V2 (Full KYC Approved)                |
+| Final KYC Decision    | Based on 100% document verification or single rejection    |
+| RBAC Implementation   | Different roles with appropriate access levels             |
+| Cashfree Integration  | Secure document fetching via API                           |
+
+---
+
+## 🚀 Future Enhancements (Optional)
+
+- AI-based document verification.
+- Auto-suggestions for document upload errors.
+- Batch processing for bulk KYC approvals.
+
+---
+
+## 🏁 Conclusion
+
+The **Admin KYC Dashboard** is a robust tool for managing driver onboarding, enhancing compliance, reducing operational risk, and improving verification efficiency across platforms.
+
