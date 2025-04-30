@@ -4,7 +4,7 @@ A secure, centralized real-time verification system to streamline and monitor dr
 
 ---
 
-## 📌 Table of Contents
+##  Table of Contents
 
 - [Introduction](#introduction)
 - [Purpose](#purpose)
@@ -23,13 +23,13 @@ A secure, centralized real-time verification system to streamline and monitor dr
 
 ---
 
-## 📖 Introduction
+##  Introduction
 
 **Admin KYC Dashboard** is a real-time platform that manages and monitors driver onboarding by securely tracking login and KYC document verification processes.
 
 ---
 
-## 🎯 Purpose
+##  Purpose
 
 The Admin KYC Dashboard aims to eliminate manual, insecure verification systems. It empowers administrators to:
 
@@ -39,7 +39,7 @@ The Admin KYC Dashboard aims to eliminate manual, insecure verification systems.
 
 ---
 
-## ⚙️ How It Works
+##  How It Works
 
 ### Driver Login and KPIs
 
@@ -57,7 +57,7 @@ When a driver signs up and logs in:
 
 ---
 
-## 📋 Driver KYC Details Structure
+##  Driver KYC Details Structure
 
 ### Data Layout
 
@@ -66,7 +66,7 @@ When a driver signs up and logs in:
 
 ---
 
-## 📝 Document Verification Process
+##  Document Verification Process
 
 ### Viewing Submitted Documents
 
@@ -80,7 +80,7 @@ When a driver signs up and logs in:
 
 ---
 
-## ✅ KYC Completion Measurement
+##  KYC Completion Measurement
 
 - Each document is tracked to calculate a percentage completion.
 - Upon reaching **100% verification**, a **final overall comment** and decision (Approved/Rejected) is mandatory.
@@ -88,7 +88,7 @@ When a driver signs up and logs in:
 
 ---
 
-## 🔐 Role-Based Access Control (RBAC)
+##  Role-Based Access Control (RBAC)
 
 - Ensures only authorized admins can access sensitive data.
 - Role-based permissions include:
@@ -98,7 +98,7 @@ When a driver signs up and logs in:
 
 ---
 
-## 📊 System Components Summary
+## System Components Summary
 
 | Feature               | Description                                                |
 |-----------------------|------------------------------------------------------------|
@@ -111,7 +111,7 @@ When a driver signs up and logs in:
 
 ---
 
-## 🚀 Future Enhancements (Optional)
+##  Future Enhancements (Optional)
 
 - AI-based document verification.
 - Auto-suggestions for document upload errors.
@@ -119,7 +119,12 @@ When a driver signs up and logs in:
 
 ---
 
-## 🏁 Conclusion
+##  Conclusion
 
 The **Admin KYC Dashboard** is a robust tool for managing driver onboarding, enhancing compliance, reducing operational risk, and improving verification efficiency across platforms.
 
+##  Disclaimer
+
+This document and the Admin KYC Dashboard are intended solely for internal development, testing, and product documentation purposes. All KYC-related data, APIs, and processes described are hypothetical and must comply with relevant data protection laws and regulations (e.g., GDPR, IT Act). The use of real user data without proper consent or legal basis is strictly prohibited.
+
+The development team and associated stakeholders hold no responsibility for misuse or unauthorized deployment of this software.
