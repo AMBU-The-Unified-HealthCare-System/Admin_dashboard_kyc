@@ -1,12 +1,15 @@
 import { useState } from "react";
-
+import { useNavigate } from "react-router-dom";
 const KYCForm = () => {
+
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [mailotp, setMailOtp] = useState("");
   const [phoneotp, setPhoneOtp] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+
 
   const handleGetOtp = () => {
 
@@ -27,7 +30,7 @@ const KYCForm = () => {
     }
     else {
       setError("");
-      alert("OTP Verified Successfully!");
+      navigate("/dashboard");
     }
   };
 

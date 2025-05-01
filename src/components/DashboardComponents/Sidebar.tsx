@@ -29,7 +29,7 @@ const Sidebar = () => {
           } text-black font-normal`}
         />
 
-        <h4 className="font-normal">Dashboard</h4>
+        <h4 className="font-normal text-nowrap">Dashboard</h4>
       </Link>
 
       {/* driver details */}
@@ -43,7 +43,7 @@ const Sidebar = () => {
         >
           <div className="flex place-items-center gap-3">
             <UsersRound size={17} />
-            <h4 className="font-normal">Driver Details</h4>
+            <h4 className="font-normal text-nowrap">Driver Details</h4>
           </div>
 
           <IoIosArrowDown

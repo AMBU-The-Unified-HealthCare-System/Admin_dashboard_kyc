@@ -5,7 +5,7 @@ import Chart from "../components/DashboardComponents/Chart";
 const Dashboard=()=> {
   return (
     <>
-      <div className=" bg-white w-full p-3 border-t border-gray-300  font-medium">
+      <div className=" bg-white w-full h-16 p-4 text-lg border-t border-gray-300  font-medium">
         Overview
       </div>
 
@@ -54,7 +54,7 @@ const Dashboard=()=> {
        
       </div>
 
-      <div className="overflow-hidden p-2 w-full h-full ">
+      <div className="overflow-hidden p-2 w-full  ">
       <Chart/>
       </div>
 
