@@ -52,6 +52,7 @@ export const chartOptions: ChartOptions<'line'> = {
       display: false,
       position: 'top',
     },
+    
   },
 
   scales: {
