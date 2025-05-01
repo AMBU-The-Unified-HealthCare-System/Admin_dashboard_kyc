@@ -9,7 +9,7 @@ const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <div className="w-56 h-screen  shadow-md      ">
+    <div className="w-56 h-screen  shadow-md overflow-hidden      ">
       {/* dashboard */}
 
       <Link

@@ -54,7 +54,7 @@ const Dashboard=()=> {
        
       </div>
 
-      <div className="overflow-hidden p-2 w-full  ">
+      <div className="overflow-hidden p-2 w-full your-div ">
       <Chart/>
       </div>
 

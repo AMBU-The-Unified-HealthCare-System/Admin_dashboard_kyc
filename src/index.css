@@ -10,5 +10,21 @@
 }
 
   
-  /* Tailwind: you can also ensure safe padding doesn’t overflow */
+/* Scrollable but hidden scrollbar */
+.your-div {
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+
+.your-div::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+body{
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
  

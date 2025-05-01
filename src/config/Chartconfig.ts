@@ -19,7 +19,7 @@ export const chartData: ChartData<"line"> = {
   datasets: [
     {
       label: "Approved",
-      data: [30, 20, 40, 35, 70, 90, 50, 45, 40, 60, 75, 85],
+      data: [30, 20, 40, 35, 70,80, 50, 45, 40, 60, 75, 85],
       borderColor: "#22c55e",
       backgroundColor: " rgba(144, 238, 144, 0.1)",
       tension: 0.5,

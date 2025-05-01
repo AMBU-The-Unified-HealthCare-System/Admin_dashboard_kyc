@@ -3,7 +3,7 @@ import { chartData, chartOptions } from "../../config/Chartconfig";
 
 const Chart = () => {
   return (
-    <div className="bg-white p-4 rounded-md shadow-sm h-100 w-full   ">
+    <div className="bg-white p-4  rounded-md shadow-sm h-100 2xl:h-[500px] w-full overflow-hidden      ">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
         <h2 className="text-lg font-semibold">Verification</h2>
 
@@ -22,14 +22,14 @@ const Chart = () => {
           </div>
           <select className="text-sm px-2 py-1 rounded ">
             <option>Year</option>
-            <option>month</option>
-            <option>day</option>
+            <option>Month</option>
+            <option>Day</option>
           </select>
         </div>
       </div>
 
       {/* Responsive Chart Container */}
-      <div className=" h-10/11 w-full py-4 px-4   ">
+      <div className=" h-10/11   py-4 px-4   ">
         <Line data={chartData} options={chartOptions} className="h-full w-full"/>
       </div>
     </div>
