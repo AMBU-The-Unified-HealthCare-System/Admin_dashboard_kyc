@@ -1,0 +1,151 @@
+
+// dummy data for driver details
+
+export interface Driver {
+    name: string;
+    driverId: string;
+    email: string;
+    address: string;
+    ambulanceCategory: string;
+    submissionDate: string;
+    lSubmissionDate: string;
+    kSubmissionDate: string;
+    v1Status: string;
+    v2Status: string;
+    action: string;
+  }
+  
+  export const drivers: Driver[] = [
+    {
+      name: "Darlene Robertson",
+      driverId: "Validated",
+      email: "rahul.1267@g...",
+      address: "12/5 Plot B ...",
+      ambulanceCategory: "PTS",
+      submissionDate: "3/4/16",
+      lSubmissionDate: "3/4/16",
+      kSubmissionDate: "3/4/16",
+      v1Status: "Pending",
+      v2Status: "Pending",
+      action: "KYC Submitted"
+    },
+    {
+      name: "Guy Hawkins",
+      driverId: "Validated",
+      email: "rahul.1267@g...",
+      address: "HNO 245 SKR...",
+      ambulanceCategory: "PTS",
+      submissionDate: "7/11/19",
+      lSubmissionDate: "4/4/16",
+      kSubmissionDate: "4/4/16",
+      v1Status: "Pending",
+      v2Status: "Pending",
+      action: "KYC Submitted"
+    },
+    {
+      name: "Guy Hawkins",
+      driverId: "Validated",
+      email: "rahul.1267@g...",
+      address: "HNO 245 SKR...",
+      ambulanceCategory: "PTS",
+      submissionDate: "7/11/19",
+      lSubmissionDate: "4/4/16",
+      kSubmissionDate: "4/4/16",
+      v1Status: "Pending",
+      v2Status: "Pending",
+      action: "KYC Submitted"
+    },
+    {
+      name: "Guy Hawkins",
+      driverId: "Validated",
+      email: "rahul.1267@g...",
+      address: "HNO 245 SKR...",
+      ambulanceCategory: "PTS",
+      submissionDate: "7/11/19",
+      lSubmissionDate: "4/4/16",
+      kSubmissionDate: "4/4/16",
+      v1Status: "Pending",
+      v2Status: "Pending",
+      action: "KYC Submitted"
+    },
+    {
+      name: "Guy Hawkins",
+      driverId: "Validated",
+      email: "rahul.1267@g...",
+      address: "HNO 245 SKR...",
+      ambulanceCategory: "PTS",
+      submissionDate: "7/11/19",
+      lSubmissionDate: "4/4/16",
+      kSubmissionDate: "4/4/16",
+      v1Status: "Pending",
+      v2Status: "Pending",
+      action: "KYC Submitted"
+    },
+    {
+      name: "Guy Hawkins",
+      driverId: "Validated",
+      email: "rahul.1267@g...",
+      address: "HNO 245 SKR...",
+      ambulanceCategory: "PTS",
+      submissionDate: "7/11/19",
+      lSubmissionDate: "4/4/16",
+      kSubmissionDate: "4/4/16",
+      v1Status: "Pending",
+      v2Status: "Pending",
+      action: "KYC Submitted"
+    },
+    {
+      name: "Guy Hawkins",
+      driverId: "Validated",
+      email: "rahul.1267@g...",
+      address: "HNO 245 SKR...",
+      ambulanceCategory: "PTS",
+      submissionDate: "7/11/19",
+      lSubmissionDate: "4/4/16",
+      kSubmissionDate: "4/4/16",
+      v1Status: "Pending",
+      v2Status: "Pending",
+      action: "KYC Submitted"
+    },
+    {
+      name: "Guy Hawkins",
+      driverId: "Validated",
+      email: "rahul.1267@g...",
+      address: "HNO 245 SKR...",
+      ambulanceCategory: "PTS",
+      submissionDate: "7/11/19",
+      lSubmissionDate: "4/4/16",
+      kSubmissionDate: "4/4/16",
+      v1Status: "Pending",
+      v2Status: "Pending",
+      action: "KYC Submitted"
+    },
+    {
+      name: "Guy Hawkins",
+      driverId: "Validated",
+      email: "rahul.1267@g...",
+      address: "HNO 245 SKR...",
+      ambulanceCategory: "PTS",
+      submissionDate: "7/11/19",
+      lSubmissionDate: "4/4/16",
+      kSubmissionDate: "4/4/16",
+      v1Status: "Pending",
+      v2Status: "Pending",
+      action: "KYC Submitted"
+    },
+    {
+      name: "Guy Hawkins",
+      driverId: "Validated",
+      email: "rahul.1267@g...",
+      address: "HNO 245 SKR...",
+      ambulanceCategory: "PTS",
+      submissionDate: "7/11/19",
+      lSubmissionDate: "4/4/16",
+      kSubmissionDate: "4/4/16",
+      v1Status: "Pending",
+      v2Status: "Pending",
+      action: "KYC Submitted"
+    },
+
+  ];
+  

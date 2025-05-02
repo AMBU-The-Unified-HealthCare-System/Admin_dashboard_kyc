@@ -11,10 +11,14 @@ export default function Mainlayout() {
   const isDashboard = location.pathname === "/dashboard";
   
   return (
-    <div className=" flex h-screen">
-        <Sidebar/>
+    <div className=" flex h-screen overflow-hidden">
 
-        <div className=" flex flex-col flex-1">
+<div className="w-56 min-w-[14rem] flex-shrink-0 border-r border-gray-200">
+    <Sidebar />
+  </div>
+        
+
+        <div className=" flex flex-col flex-1 overflow-hidden">
             <Navbar/>
 
             <main className={`flex-1 your-div overflow-auto ${
