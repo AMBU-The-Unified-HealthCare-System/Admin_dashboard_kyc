@@ -19,7 +19,7 @@ const LoginDetails = () => {
   };
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden ">
       <div className=" bg-white w-full h-16 p-5 text-lg border border-gray-300 mt-5 ml-5 font-medium">
         Login Details
       </div>
@@ -81,7 +81,7 @@ const LoginDetails = () => {
       </div>
 
       {/* Table */}
-      <DriverDetails />
+      <DriverDetails  />
 
      
 
