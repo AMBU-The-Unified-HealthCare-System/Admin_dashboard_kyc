@@ -24,7 +24,7 @@ export const chartData: ChartData<"line"> = {
       backgroundColor: " rgba(144, 238, 144, 0.1)",
       tension: 0.5,
       fill: true,
-      pointRadius: 0,
+    
     },
     {
       label: "Pending",
@@ -33,7 +33,7 @@ export const chartData: ChartData<"line"> = {
       backgroundColor: "rgba(255, 255, 255, 0.2)",
       tension: 0.5,
       fill: true,
-      pointRadius: 0,
+      
     },
     {
       label: "Decline",
@@ -42,7 +42,7 @@ export const chartData: ChartData<"line"> = {
       backgroundColor: "rgba(255, 255, 255, 0.2)",
       tension: 0.5,
       fill: true,
-      pointRadius: 0,
+     
      
     },
   ],

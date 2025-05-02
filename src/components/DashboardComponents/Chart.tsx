@@ -3,7 +3,7 @@ import { chartData, chartOptions } from "../../config/Chartconfig";
 
 const Chart = () => {
   return (
-    <div className="bg-white p-4  rounded-md shadow-sm h-100 2xl:h-[500px] w-full overflow-hidden      ">
+    <div className="bg-white p-4  rounded-md shadow-sm h-100 2xl:h-[500px] xl:w-[950px] 2xl:w-[1600px] 2xl:mt-24 overflow-hidden  xl:ml-6      ">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
         <h2 className="text-lg font-semibold">Verification</h2>
 
