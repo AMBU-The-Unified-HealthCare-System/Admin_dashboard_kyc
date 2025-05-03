@@ -3,6 +3,7 @@ import { CiCircleCheck } from "react-icons/ci";
 import Pagination from "../Logindetails/Pagination";
 import { useState } from "react";
 import { FaEye } from "react-icons/fa";
+import Sidemodal from "../Sidemodal";
 
 const DriverDetails = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -11,6 +12,26 @@ const DriverDetails = () => {
 
   const startidx = (currentPage - 1) * pendingdetails;
   const PendingKyc = Pendingkyc.slice(startidx, startidx + pendingdetails); // show only 10 drivers
+
+  const [modalData, setModalData] = useState<{
+    isOpen: boolean;
+    fieldLabel: string;
+    fieldValue: string;
+    
+  }>({
+    isOpen: false,
+    fieldLabel: "",
+    fieldValue: "",
+    
+  });
+
+  const openModal = (label: string, value: string ) => {
+    setModalData({ isOpen: true, fieldLabel: label, fieldValue: value });
+  };
+  
+  const closeModal = () => {
+    setModalData({ ...modalData, isOpen: false });
+  };
 
   return (
 
@@ -37,9 +58,9 @@ const DriverDetails = () => {
           className="grid grid-cols-[repeat(11,minmax(150px,1fr))] gap-x-12  text-sm  p-3 items-center text-nowrap"
         >
           <div>{Pendingkyc.name}</div>
-          <div className="text-blue-600 flex gap-1 items-center">{Pendingkyc.aadharId} <CiCircleCheck className="text-gray-500" size={15} />  </div>
-          <div className="text-blue-600 flex gap-1 items-center">{Pendingkyc.panId} <CiCircleCheck className="text-gray-500" size={15} />  </div> 
-          <div className="text-blue-600 flex gap-1 items-center">{Pendingkyc.Dlnumber}  <CiCircleCheck className="text-gray-500" size={15} /> </div>
+          <div className="text-blue-600 flex gap-1 items-center cursor-pointer" onClick={()=>openModal(Pendingkyc.name, "Aadhar ID")}>{Pendingkyc.aadharId} <CiCircleCheck className="text-gray-500" size={15} />  </div>
+          <div className="text-blue-600 flex gap-1 items-center cursor-pointer"onClick={()=>openModal(Pendingkyc.name, "PAN ID")}>{Pendingkyc.panId} <CiCircleCheck className="text-gray-500" size={15} />  </div> 
+          <div className="text-blue-600 flex gap-1 items-center cursor-pointer"onClick={()=>openModal(Pendingkyc.name, "DL Number")}>{Pendingkyc.Dlnumber}  <CiCircleCheck className="text-gray-500" size={15} /> </div>
           <div className="text-blue-600 flex gap-5 items-center">{Pendingkyc.LicenseId} <CiCircleCheck className="text-gray-500" size={15} /></div>
           <div className="flex gap-4 items-center cursor-pointer">{Pendingkyc.BankAccount}<FaEye  /></div>
           <div className="text-blue-600 flex gap-7 items-center cursor-pointer">{Pendingkyc.RegistrationCert} <FaEye className="text-black"  /></div>
@@ -63,6 +84,14 @@ const DriverDetails = () => {
           
         />
       </div>
+
+      
+    <Sidemodal
+    isOpen={modalData.isOpen}
+    onClose={closeModal}
+    fieldLabel={modalData.fieldLabel}
+    fieldValue={modalData.fieldValue}
+    driverName=""/>
 
   </>
 

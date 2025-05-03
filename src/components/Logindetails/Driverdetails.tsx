@@ -3,6 +3,7 @@ import { FaCheckCircle } from "react-icons/fa";
 import { CiCircleCheck } from "react-icons/ci";
 import Pagination from "../Logindetails/Pagination";
 import { useState } from "react";
+import Sidemodal from "../Sidemodal";
 
 const DriverDetails = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -11,6 +12,27 @@ const DriverDetails = () => {
 
   const startidx = (currentPage - 1) * driversDetailsPerPage;
   const currentDrivers = drivers.slice(startidx, startidx + driversDetailsPerPage); // show only 10 drivers
+
+
+  const [modalData, setModalData] = useState<{
+    isOpen: boolean;
+    fieldLabel: string;
+    fieldValue: string;
+    
+  }>({
+    isOpen: false,
+    fieldLabel: "",
+    fieldValue: "",
+    
+  });
+
+  const openModal = (label: string, value: string ) => {
+    setModalData({ isOpen: true, fieldLabel: label, fieldValue: value });
+  };
+  
+  const closeModal = () => {
+    setModalData({ ...modalData, isOpen: false });
+  };
 
   return (
 
@@ -37,9 +59,9 @@ const DriverDetails = () => {
           className="grid grid-cols-[repeat(11,minmax(150px,1fr))] gap-x-12  text-sm  p-3 items-center text-nowrap"
         >
           <div>{driver.name}</div>
-          <div className="text-blue-600 flex gap-1 items-center">{driver.driverId} <FaCheckCircle className="text-green-600" /></div>
-          <div className="text-blue-600 flex gap-1 items-center">{driver.email} <CiCircleCheck className="text-gray-500" size={15} />  </div> 
-          <div className="text-blue-600 flex gap-1 items-center">{driver.address}  <CiCircleCheck className="text-gray-500" size={15} /> </div>
+          <div className="text-blue-600 flex gap-1 items-center cursor-pointer" >{driver.driverId} <FaCheckCircle className="text-green-600" /></div>
+          <div className="text-blue-600 flex gap-1 items-center cursor-pointer" onClick={()=>openModal(driver.name, "Email ID")}>{driver.email} <CiCircleCheck className="text-gray-500" size={15} />  </div> 
+          <div className="text-blue-600 flex gap-1 items-center cursor-pointer" onClick={()=>openModal(driver.name, "Address")}>{driver.address}  <CiCircleCheck className="text-gray-500" size={15} /> </div>
           <div className="text-blue-600 flex gap-5 items-center">{driver.ambulanceCategory} <CiCircleCheck className="text-gray-500" size={15} /></div>
           <div>{driver.submissionDate}</div>
           <div>{driver.lSubmissionDate}</div>
@@ -63,6 +85,14 @@ const DriverDetails = () => {
           
         />
       </div>
+      
+
+    <Sidemodal
+    isOpen={modalData.isOpen}
+    onClose={closeModal}
+    fieldLabel={modalData.fieldLabel}
+    fieldValue={modalData.fieldValue}
+    driverName=""/>
 
   </>
 
