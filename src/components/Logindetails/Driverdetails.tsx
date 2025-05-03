@@ -16,7 +16,7 @@ const DriverDetails = () => {
 
     <>
     <div className="overflow-x-auto p-4 styled-scrollbar  your-div">
-    <div className="min-w-[2100px] h-[700px]  ">
+    <div className="min-w-[2100px] h-[650px]  ">                                    
       <div className="grid grid-cols-[repeat(11,minmax(150px,1fr))] gap-x-12  font-semibold  w-full p-2 rounded-t text-nowrap bg-sky-50 ">
         <div>Driver Name</div>
         <div>Driver ID</div>
