@@ -20,6 +20,10 @@ const Chart = () => {
             <span className="w-4 h-4 bg-red-500 rounded-full"></span>
             <span className="text-sm font-medium">Decline</span>
           </div>
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-4 bg-green-300 rounded-full"></span>
+            <span className="text-sm font-medium">Total Login Drivers</span>
+          </div>
           <select className="text-sm px-2 py-1 rounded ">
             <option>Year</option>
             <option>Month</option>

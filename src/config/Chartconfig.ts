@@ -45,6 +45,16 @@ export const chartData: ChartData<"line"> = {
      
      
     },
+    {
+      label: "Total Login Drivers",
+      data: [ 37, 40, 35, 30, 25, 50, 15,25, 40, 15, 30, 35,],
+      borderColor: "#86efac",
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      tension: 0.5,
+      fill: true,
+     
+     
+    },
   ],
 };
 
