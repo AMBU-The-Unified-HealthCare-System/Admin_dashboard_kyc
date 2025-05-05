@@ -4,6 +4,7 @@ import { CiCircleCheck } from "react-icons/ci";
 import Pagination from "../Logindetails/Pagination";
 import { useState } from "react";
 import Sidemodal from "../Sidemodal";
+import { CiEdit } from "react-icons/ci";
 
 const DriverDetails = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,7 +63,7 @@ const DriverDetails = () => {
           <div className="text-blue-600 flex gap-1 items-center cursor-pointer" >{driver.driverId} <FaCheckCircle className="text-green-600" /></div>
           <div className="text-blue-600 flex gap-1 items-center cursor-pointer" onClick={()=>openModal(driver.name, "Email ID")}>{driver.email} <CiCircleCheck className="text-gray-500" size={15} />  </div> 
           <div className="text-blue-600 flex gap-1 items-center cursor-pointer" onClick={()=>openModal(driver.name, "Address")}>{driver.address}  <CiCircleCheck className="text-gray-500" size={15} /> </div>
-          <div className="text-blue-600 flex gap-5 items-center">{driver.ambulanceCategory} <CiCircleCheck className="text-gray-500" size={15} /></div>
+          <div className="text-blue-600 flex gap-5 items-center">{driver.ambulanceCategory} <CiCircleCheck className="text-gray-500" size={15} /> <CiEdit className="text-black cursor-pointer" /></div>
           <div>{driver.submissionDate}</div>
           <div>{driver.lSubmissionDate}</div>
           <div>{driver.kSubmissionDate}</div>

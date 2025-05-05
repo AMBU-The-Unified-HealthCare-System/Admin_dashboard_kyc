@@ -27,7 +27,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -40,7 +40,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -53,7 +53,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -66,7 +66,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -79,7 +79,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -92,7 +92,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -105,7 +105,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -118,7 +118,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -131,7 +131,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -144,7 +144,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -157,7 +157,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -170,7 +170,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -183,7 +183,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -196,7 +196,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -209,7 +209,7 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
     {
       name: "Darlene Robertson",
@@ -222,73 +222,9 @@ export interface Pending {
       VehicleNumber: "UP19C1919",
       Document: "Open",
       V2Status: "Pending",
-      action: "KYC Submitted"
+      action: "Make Call"
     },
-    {
-      name: "Darlene Robertson",
-      aadharId: "9823****",
-      panId: "rahul.1267@g...",
-      Dlnumber: "HNO 245 SKR...",
-      LicenseId: "PTS",
-      BankAccount: "BNKA",
-      RegistrationCert: "RC",
-      VehicleNumber: "UP19C1919",
-      Document: "Open",
-      V2Status: "Pending",
-      action: "KYC Submitted"
-    },
-    {
-      name: "Darlene Robertson",
-      aadharId: "9823****",
-      panId: "rahul.1267@g...",
-      Dlnumber: "HNO 245 SKR...",
-      LicenseId: "PTS",
-      BankAccount: "BNKA",
-      RegistrationCert: "RC",
-      VehicleNumber: "UP19C1919",
-      Document: "Open",
-      V2Status: "Pending",
-      action: "KYC Submitted"
-    },
-    {
-      name: "Darlene Robertson",
-      aadharId: "9823****",
-      panId: "rahul.1267@g...",
-      Dlnumber: "HNO 245 SKR...",
-      LicenseId: "PTS",
-      BankAccount: "BNKA",
-      RegistrationCert: "RC",
-      VehicleNumber: "UP19C1919",
-      Document: "Open",
-      V2Status: "Pending",
-      action: "KYC Submitted"
-    },
-    {
-      name: "Darlene Robertson",
-      aadharId: "9823****",
-      panId: "rahul.1267@g...",
-      Dlnumber: "HNO 245 SKR...",
-      LicenseId: "PTS",
-      BankAccount: "BNKA",
-      RegistrationCert: "RC",
-      VehicleNumber: "UP19C1919",
-      Document: "Open",
-      V2Status: "Pending",
-      action: "KYC Submitted"
-    },
-    {
-      name: "Darlene Robertson",
-      aadharId: "9823****",
-      panId: "rahul.1267@g...",
-      Dlnumber: "HNO 245 SKR...",
-      LicenseId: "PTS",
-      BankAccount: "BNKA",
-      RegistrationCert: "RC",
-      VehicleNumber: "UP19C1919",
-      Document: "Open",
-      V2Status: "Pending",
-      action: "KYC Submitted"
-    },
+   
     
 
    

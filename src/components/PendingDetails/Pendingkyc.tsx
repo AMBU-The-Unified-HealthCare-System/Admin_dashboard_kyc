@@ -4,6 +4,7 @@ import Pagination from "../Logindetails/Pagination";
 import { useState } from "react";
 import { FaEye } from "react-icons/fa";
 import Sidemodal from "../Sidemodal";
+import { TbPhoneCalling } from "react-icons/tb";
 
 const DriverDetails = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,7 +50,7 @@ const DriverDetails = () => {
         <div>Vehicle Number</div>
         <div>Document</div>
         <div>V2 Status</div>
-        <div>Action</div>
+        <div>Call to Driver</div>
       </div>
 
       {PendingKyc.map((Pendingkyc, index) => (
@@ -62,13 +63,13 @@ const DriverDetails = () => {
           <div className="text-blue-600 flex gap-1 items-center cursor-pointer"onClick={()=>openModal(Pendingkyc.name, "PAN ID")}>{Pendingkyc.panId} <CiCircleCheck className="text-gray-500" size={15} />  </div> 
           <div className="text-blue-600 flex gap-1 items-center cursor-pointer"onClick={()=>openModal(Pendingkyc.name, "DL Number")}>{Pendingkyc.Dlnumber}  <CiCircleCheck className="text-gray-500" size={15} /> </div>
           <div className="text-blue-600 flex gap-5 items-center">{Pendingkyc.LicenseId} <CiCircleCheck className="text-gray-500" size={15} /></div>
-          <div className="flex gap-4 items-center cursor-pointer">{Pendingkyc.BankAccount}<FaEye  /></div>
+          <div className="flex gap-4 items-center cursor-pointer text-blue-600" onClick={()=>openModal(Pendingkyc.name ,"Bank Account" )}>{Pendingkyc.BankAccount}</div>
           <div className="text-blue-600 flex gap-7 items-center cursor-pointer">{Pendingkyc.RegistrationCert} <FaEye className="text-black"  /></div>
           <div>{Pendingkyc.VehicleNumber}</div>
           <div className="text-orange-400 border border-amber-500 rounded-md text-center w-16 p-0.5 bg-red-50 cursor-pointer">{Pendingkyc.Document}</div>
           <div className="text-orange-400 border border-amber-500 rounded-md text-center w-16 p-0.5 bg-red-50">{Pendingkyc.V2Status}</div>
-          <div className="text-blue-600 cursor-pointer hover:underline">
-            {Pendingkyc.action}</div>
+          <div className="text-blue-600 cursor-pointer hover:underline flex gap-1 items-center ">
+             <TbPhoneCalling size={20} /> {Pendingkyc.action}</div>
         </div>
       ))}
 
