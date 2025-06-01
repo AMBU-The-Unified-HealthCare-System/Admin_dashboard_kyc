@@ -67,30 +67,26 @@ const DriverDetails = ({
     fieldValue: "",
   });
 
-  // Fetch drivers from API with filters
   const fetchDrivers = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
       
-      // Build query parameters
       const params = new URLSearchParams({
         page: page.toString(),
         limit: entriesPerPage.toString(),
       });
 
-      // Add search parameter if provided
       if (searchTerm.trim()) {
         params.append('search', searchTerm.trim());
       }
 
-      // Add date filter if provided
       if (selectedDate) {
         params.append('date', selectedDate.toISOString().split('T')[0]);
       }
       
       const response = await axios.get<ApiResponse>(
-        `${'http://localhost:3000'}/driver/getDrivers?${params.toString()}`
+        `${import.meta.env.VITE_BACKEND_URL}/driver/getDrivers?${params.toString()}`
       );
       
       const result = response.data;
