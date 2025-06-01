@@ -6,16 +6,11 @@ import DriverDetails from "../components/Logindetails/Driverdetails";
 
 const LoginDetails = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [entries, setEntries] = useState(3);
-  // const [date, setDate] = useState("");
+  const [entries, setEntries] = useState(12);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const handleFilter = () => {
-    console.log("Filter clicked:", { searchTerm, entries, selectedDate });
-  };
-
-  const handleExport = () => {
-    console.log("Exporting report...");
+    console.log("Filter applied:", { searchTerm, entries, selectedDate });
   };
 
   return (
@@ -69,10 +64,9 @@ const LoginDetails = () => {
             onClick={handleFilter}
             className="bg-white border px-4 py-1 rounded text-sm"
           >
-            Filter
+            Apply Filter
           </button>
           <button
-            onClick={handleExport}
             className="bg-red-500 text-white px-4 py-1 rounded text-sm cursor-pointer"
           >
             Export Report
@@ -81,9 +75,11 @@ const LoginDetails = () => {
       </div>
 
       {/* Table */}
-      <DriverDetails  />
-
-     
+      <DriverDetails 
+        searchTerm={searchTerm}
+        entriesPerPage={entries}
+        selectedDate={selectedDate}
+      />
 
     </div>
   );
