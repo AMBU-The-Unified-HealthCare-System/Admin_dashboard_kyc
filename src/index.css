@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/* ChartStyles.css */
+
+@media (width: 1024px) {
+  .chart-container {
+    height: 300px !important;
+    overflow: hidden;
+  }
+}
+
+  
+/* Scrollable but hidden scrollbar */
+.your-div {
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+
+.your-div::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+body{
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+
+/* Custom styled scrollbar */
+.styled-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #dc2626 #fee2e2; /* red-600 thumb, red-100 track (Firefox) */
+  position: relative;
+}
+
+/* Chrome, Safari, Edge */
+.styled-scrollbar::-webkit-scrollbar {
+  height: 4px;
+   /* thinner height */
+}
+
+.styled-scrollbar::-webkit-scrollbar-track {
+  background: #fee2e2; /* Tailwind's red-100 (light red) */
+  border-radius: 6px;
+  margin: 2px 0; /* keeps it slightly inside */
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #dc2626; /* Tailwind's red-600 (strong red) */
+  border-radius: 6px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #b91c1c; /* Tailwind's red-700 for hover */
+}
+
+
+ 
