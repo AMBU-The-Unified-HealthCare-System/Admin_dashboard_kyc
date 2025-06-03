@@ -67,6 +67,7 @@ const DriverDetails = ({
     fieldValue: "",
   });
 
+  // Fetch drivers from API with filters
   const fetchDrivers = async (page: number = 1) => {
     try {
       setLoading(true);

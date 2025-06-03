@@ -6,12 +6,22 @@ import Pendingkyc from "../components/PendingDetails/Pendingkyc";
 
 const Pending = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [entries, setEntries] = useState(3);
-  // const [date, setDate] = useState("");
+  const [entries, setEntries] = useState(12);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  
+  const [appliedFilters, setAppliedFilters] = useState({
+    searchTerm: "",
+    entries: 3,
+    selectedDate: null as Date | null,
+  });
 
   const handleFilter = () => {
     console.log("Filter clicked:", { searchTerm, entries, selectedDate });
+    setAppliedFilters({
+      searchTerm,
+      entries,
+      selectedDate,
+    });
   };
 
   const handleExport = () => {
@@ -69,7 +79,7 @@ const Pending = () => {
             onClick={handleFilter}
             className="bg-white border px-4 py-1 rounded text-sm"
           >
-            Filter
+            Apply Filter
           </button>
           <button
             onClick={handleExport}
@@ -81,9 +91,11 @@ const Pending = () => {
       </div>
 
       {/* Table */}
-      <Pendingkyc/>
-
-     
+      <Pendingkyc 
+        searchTerm={appliedFilters.searchTerm}
+        entriesPerPage={appliedFilters.entries}
+        selectedDate={appliedFilters.selectedDate}
+      />
 
     </div>
   );
