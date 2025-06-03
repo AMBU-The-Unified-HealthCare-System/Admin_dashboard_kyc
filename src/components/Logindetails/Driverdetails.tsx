@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
-import { FaCheckCircle } from "react-icons/fa";
-import { CiCircleCheck } from "react-icons/ci";
+import { useEffect, useState, useRef } from "react";
+import { FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
 import Pagination from "../Logindetails/Pagination";
 import Sidemodal from "../Sidemodal";
 import { CiEdit } from "react-icons/ci";
@@ -26,6 +25,28 @@ interface Driver {
   isEmailVerified: boolean;
   isPhoneNumberVerified: boolean;
   action: string;
+  // Add approval status fields
+  approvals?: {
+    email_id?: { status: 'ACCEPTED' | 'DECLINED' | 'PENDING' };
+    address?: { status: 'ACCEPTED' | 'DECLINED' | 'PENDING' };
+    ambulance_category?: { status: 'ACCEPTED' | 'DECLINED' | 'PENDING' };
+    aadhaar_details?: { status: 'ACCEPTED' | 'DECLINED' | 'PENDING' };
+    pan_details?: { status: 'ACCEPTED' | 'DECLINED' | 'PENDING' };
+    dl_details?: { status: 'ACCEPTED' | 'DECLINED' | 'PENDING' };
+    bank_details?: { status: 'ACCEPTED' | 'DECLINED' | 'PENDING' };
+    rc_details?: { status: 'ACCEPTED' | 'DECLINED' | 'PENDING' };
+  };
+}
+
+interface ApprovalStatus {
+  email_id: { status: string; remark?: string };
+  address: { status: string; remark?: string };
+  ambulance_category: { status: string; remark?: string };
+  aadhaar_details: { status: string; remark?: string };
+  pan_details: { status: string; remark?: string };
+  dl_details: { status: string; remark?: string };
+  bank_details: { status: string; remark?: string };
+  rc_details: { status: string; remark?: string };
 }
 
 interface ApiResponse {
@@ -57,15 +78,155 @@ const DriverDetails = ({
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [approvalStatuses, setApprovalStatuses] = useState<Record<string, ApprovalStatus>>({});
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
   const [modalData, setModalData] = useState<{
     isOpen: boolean;
     fieldLabel: string;
     fieldValue: string;
+    fieldType: string;
+    driverId: string;
+    kycDetails: any;
   }>({
     isOpen: false,
     fieldLabel: "",
     fieldValue: "",
+    fieldType: "",
+    driverId: "",
+    kycDetails: null,
   });
+
+  // Ambulance categories based on your schema
+  const ambulanceCategories = [
+    "MFR - medical first responder",
+    "PTS - patient transport support", 
+    "BLS - basic life support",
+    "DBA - dead body smarty",
+    "ALS - advance life support"
+  ];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setActiveDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Fetch approval statuses for all drivers
+  const fetchApprovalStatuses = async (driverIds: string[]) => {
+    try {
+      const statusPromises = driverIds.map(async (driverId) => {
+        try {
+          const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/driver/approval/${driverId}`);
+          if (response.data.success) {
+            return { driverId, status: response.data.data };
+          }
+        } catch (error) {
+          console.error(`Error fetching approval for driver ${driverId}:`, error);
+        }
+        return { driverId, status: null };
+      });
+
+      const results = await Promise.all(statusPromises);
+      const statusMap: Record<string, ApprovalStatus> = {};
+      
+      results.forEach(({ driverId, status }) => {
+        if (status) {
+          statusMap[driverId] = status;
+        }
+      });
+      
+      setApprovalStatuses(statusMap);
+    } catch (error) {
+      console.error('Error fetching approval statuses:', error);
+    }
+  };
+
+  // Helper function to get approval status icon
+  const getApprovalStatusIcon = (driverId: string, fieldType: string) => {
+    const approval = approvalStatuses[driverId];
+    if (!approval) return <FaClock className="text-gray-400" size={13} />;
+
+    let status = '';
+    switch (fieldType) {
+      case 'email':
+        status = approval.email_id?.status || 'PENDING';
+        break;
+      case 'address':
+        status = approval.address?.status || 'PENDING';
+        break;
+      case 'ambulance_category':
+        status = approval.ambulance_category?.status || 'PENDING';
+        break;
+      default:
+        status = 'PENDING';
+    }
+
+    switch (status) {
+      case 'ACCEPTED':
+        return <FaCheckCircle className="text-green-500" size={13} />;
+      case 'DECLINED':
+        return <FaTimesCircle className="text-red-500" size={13} />;
+      case 'PENDING':
+      default:
+        return <FaClock className="text-gray-400" size={13} />;
+    }
+  };
+
+  // Update ambulance category
+  const updateAmbulanceCategory = async (driverId: string, newCategory: string) => {
+    try {
+      setUpdatingCategory(driverId);
+      
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/driver/update-ambulance-category/${driverId}`,
+        { ambulanceCategory: newCategory },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (response.status === 200 && response.data?.success) {
+        // Update the local state
+        setDrivers(prevDrivers => 
+          prevDrivers.map(driver => 
+            driver._id === driverId 
+              ? { ...driver, ambulanceCategory: newCategory }
+              : driver
+          )
+        );
+        setActiveDropdown(null);
+        
+        // Optional: Show success message
+        console.log('Ambulance category updated successfully');
+      } else {
+        throw new Error(response.data?.message || 'Failed to update ambulance category');
+      }
+    } catch (error) {
+      console.error('Error updating ambulance category:', error);
+      // Optional: Show error message to user
+      alert('Failed to update ambulance category. Please try again.');
+    } finally {
+      setUpdatingCategory(null);
+    }
+  };
+
+  // Toggle dropdown
+  const toggleDropdown = (driverId: string) => {
+    setActiveDropdown(activeDropdown === driverId ? null : driverId);
+  };
 
   // Fetch drivers from API with filters
   const fetchDrivers = async (page: number = 1) => {
@@ -90,15 +251,25 @@ const DriverDetails = ({
         `${import.meta.env.VITE_BACKEND_URL}/driver/getDrivers?${params.toString()}`
       );
       
+      if (response.status !== 200) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+      
       const result = response.data;
       console.log(result);
       
-      if (result.success) {
+      if (result.success && result.data) {
         setDrivers(result.data);
-        setTotalPages(result.pagination.totalPages);
-        setCurrentPage(result.pagination.currentPage);
+        setTotalPages(result.pagination?.totalPages || 1);
+        setCurrentPage(result.pagination?.currentPage || 1);
+        
+        // Fetch approval statuses for the current drivers
+        const driverIds = result.data.map(driver => driver._id);
+        if (driverIds.length > 0) {
+          await fetchApprovalStatuses(driverIds);
+        }
       } else {
-        throw new Error('Failed to fetch drivers');
+        throw new Error(result.message || 'Failed to fetch drivers');
       }
     } catch (err) {
       console.error('Error fetching drivers:', err);
@@ -126,12 +297,27 @@ const DriverDetails = ({
     setCurrentPage(page);
   };
 
-  const openModal = (label: string, value: string) => {
-    setModalData({ isOpen: true, fieldLabel: label, fieldValue: value });
+  const openModal = (label: string, value: string, fieldType: string, driver: Driver) => {
+    setModalData({ 
+      isOpen: true, 
+      fieldLabel: label, 
+      fieldValue: value,
+      fieldType: fieldType,
+      driverId: driver._id,
+      kycDetails: driver // Pass the entire driver object as kycDetails
+    });
   };
 
   const closeModal = () => {
-    setModalData({ ...modalData, isOpen: false });
+    setModalData({ 
+      ...modalData, 
+      isOpen: false 
+    });
+  };
+
+  const handleApprovalUpdate = () => {
+    // Refresh the drivers list after approval update
+    fetchDrivers(currentPage);
   };
 
   // Loading state
@@ -193,23 +379,69 @@ const DriverDetails = ({
                   {driver.isPhoneNumberVerified && <FaCheckCircle className="text-green-600 flex-shrink-0" />}
                 </div>
                 <div 
-                  className="text-blue-600 flex gap-1 items-center cursor-pointer" 
-                  onClick={() => openModal("Email ID", driver.email)}
+                  className="text-blue-600 flex gap-1 justify-between items-center cursor-pointer" 
+                  onClick={() => openModal("Email ID", driver.email, "email", driver)}
                 >
-                  <span className="truncate" title={driver.email}>{driver.email}</span>
-                  <CiCircleCheck className={`${driver.isEmailVerified ? "text-green-500" : "text-gray-500"} flex-shrink-0`} size={15} />
+                  <span className="truncate max-w-32" title={driver.email}>{driver.email}</span>
+                  {getApprovalStatusIcon(driver._id, 'email')}
                 </div>
                 <div 
-                  className="text-blue-600 flex gap-1 items-center cursor-pointer" 
-                  onClick={() => openModal("Address", driver.address)}
+                  className="text-blue-600 flex justify-between gap-1 items-center cursor-pointer" 
+                  onClick={() => openModal("Address", driver.address, "address", driver)}
                 >
-                  <span className="truncate" title={driver.address}>{driver.address}</span>
-                  <CiCircleCheck className="text-gray-500 flex-shrink-0" size={15} />
+                  <span className="truncate max-w-32" title={driver.address}>{driver.address}</span>
+                  {getApprovalStatusIcon(driver._id, 'address')}
                 </div>
-                <div className="text-blue-600 flex gap-5 items-center">
-                  <span className="truncate" title={driver.ambulanceCategory}>{driver.ambulanceCategory}</span>
-                  <CiCircleCheck className="text-gray-500 flex-shrink-0" size={15} /> 
-                  <CiEdit className="text-black cursor-pointer flex-shrink-0" />
+                <div className="text-blue-600 flex gap-5 items-center justify-between relative">
+                  <span 
+                    className="truncate cursor-pointer max-w-20" 
+                    title={driver.ambulanceCategory}
+                    onClick={() => openModal("Ambulance Category", driver.ambulanceCategory, "ambulance_category", driver)}
+                  >
+                    {driver.ambulanceCategory}
+                  </span>
+                  {getApprovalStatusIcon(driver._id, 'ambulance_category')}
+                  <div className="relative" ref={activeDropdown === driver._id ? dropdownRef : null}>
+                    <CiEdit 
+                      className="text-black cursor-pointer flex-shrink-0 hover:text-blue-600" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDropdown(driver._id);
+                      }}
+                    />
+                    {activeDropdown === driver._id && (
+                      <div className="absolute top-full right-0 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-50">
+                        <div className="py-1 max-h-48 overflow-y-auto">
+                          {ambulanceCategories.map((category) => (
+                            <button
+                              key={category}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${
+                                driver.ambulanceCategory === category 
+                                  ? 'bg-blue-50 text-blue-600' 
+                                  : 'text-gray-700'
+                              } ${updatingCategory === driver._id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              onClick={() => {
+                                if (updatingCategory !== driver._id && driver.ambulanceCategory !== category) {
+                                  updateAmbulanceCategory(driver._id, category);
+                                }
+                              }}
+                              disabled={updatingCategory === driver._id}
+                            >
+                              {category}
+                              {driver.ambulanceCategory === category && (
+                                <FaCheckCircle className="inline ml-2 text-green-500" size={12} />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        {updatingCategory === driver._id && (
+                          <div className="px-3 py-2 text-xs text-gray-500 border-t">
+                            Updating...
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="truncate" title={driver.submissionDate}>{driver.submissionDate}</div>
                 <div className="truncate" title={driver.lSubmissionDate}>{driver.lSubmissionDate}</div>
@@ -243,6 +475,10 @@ const DriverDetails = ({
         fieldLabel={modalData.fieldLabel}
         fieldValue={modalData.fieldValue}
         driverName=""
+        driverId={modalData.driverId}
+        fieldType={modalData.fieldType}
+        kycDetails={modalData.kycDetails}
+        onApprovalUpdate={handleApprovalUpdate}
       />
     </>
   );

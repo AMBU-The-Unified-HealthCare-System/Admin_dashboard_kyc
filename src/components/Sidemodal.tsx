@@ -1,4 +1,5 @@
-import React from 'react';
+import axios from 'axios';
+import React, { useState } from 'react';
 
 interface SideModalProps {
   isOpen: boolean;
@@ -6,8 +7,10 @@ interface SideModalProps {
   fieldLabel: string;
   fieldValue: string;
   driverName: string;
+  driverId: string;
   kycDetails?: any; 
   fieldType?: string; 
+  onApprovalUpdate?: () => void;
 }
 
 const Sidemodal: React.FC<SideModalProps> = ({
@@ -15,11 +18,86 @@ const Sidemodal: React.FC<SideModalProps> = ({
   onClose,
   fieldLabel,
   fieldValue,
-  driverName,
+  driverId,
   kycDetails,
   fieldType,
+  onApprovalUpdate,
 }) => {
+  const [remark, setRemark] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!isOpen) return null;
+
+  // Map fieldType to database field names
+  const getApprovalFieldName = (fieldType: string) => {
+    switch (fieldType) {
+      case 'aadhar': return 'aadhaar_details';
+      case 'pan': return 'pan_details';
+      case 'dl': return 'dl_details';
+      case 'bank': return 'bank_details';
+      case 'rc': return 'rc_details';
+      case 'email': return 'email_id';
+      case 'address': return 'address';
+      case 'ambulance_category': return 'ambulance_category';
+      default: return null;
+    }
+  };
+
+  const handleApproval = async (status: 'ACCEPTED' | 'DECLINED' | 'PENDING') => {
+    if (!fieldType || !driverId) {
+      alert('Missing required information');
+      return;
+    }
+  
+    const approvalField = getApprovalFieldName(fieldType);
+    if (!approvalField) {
+      alert('Invalid field type');
+      return;
+    }
+  
+    if (status === 'DECLINED' && !remark.trim()) {
+      alert('Please provide a reason for declining');
+      return;
+    }
+  
+    setIsSubmitting(true);
+  
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+      
+      const response = await axios.post(`${backendUrl}/driver/approval`, {
+        driverId,
+        fieldType: approvalField,
+        status,
+        remark: remark.trim() || undefined,
+      });
+  
+      const result = response.data;
+  
+      if (result.success) {
+        alert(`${fieldLabel} ${status.toLowerCase()} successfully!`);
+        setRemark('');
+        onClose();
+        if (onApprovalUpdate) {
+          onApprovalUpdate();
+        }
+      } else {
+        throw new Error(result.message || 'Failed to update approval status');
+      }
+    } catch (error) {
+      console.error('Error updating approval:', error);
+      alert(error instanceof Error ? error.message : 'Failed to update approval status');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+
+// Optional: Add environment variable to your .env file
+// VITE_BACKEND_URL=http://localhost:3000
+
+// Or if you're using Create React App instead of Vite:
+// REACT_APP_BACKEND_URL=http://localhost:3000
 
   const renderFieldDetails = () => {
     if (!kycDetails || !fieldType) {
@@ -31,6 +109,39 @@ const Sidemodal: React.FC<SideModalProps> = ({
     }
 
     switch (fieldType) {
+      case 'email':
+        return (
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-gray-800">Email Details</h3>
+            <div className="space-y-2 text-sm">
+              <p><strong>Email ID:</strong> {fieldValue}</p>
+              <p><strong>Verification Status:</strong> {kycDetails.isEmailVerified ? 'Verified' : 'Not Verified'}</p>
+            </div>
+          </div>
+        );
+
+      case 'address':
+        return (
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-gray-800">Address Details</h3>
+            <div className="space-y-2 text-sm">
+              <p><strong>Address:</strong> {fieldValue}</p>
+            </div>
+          </div>
+        );
+
+      case 'ambulance_category':
+        return (
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-gray-800">Ambulance Category Details</h3>
+            <div className="space-y-2 text-sm">
+              <p><strong>Category:</strong> {fieldValue}</p>
+              <p><strong>Vehicle Number:</strong> {kycDetails.vehicleNumber || 'N/A'}</p>
+              <p><strong>Model:</strong> {kycDetails.model || 'N/A'}</p>
+            </div>
+          </div>
+        );
+
       case 'aadhar':
         { const aadharDetail = kycDetails.aadhaar_detail;
         return (
@@ -194,19 +305,34 @@ const Sidemodal: React.FC<SideModalProps> = ({
           placeholder="Reason for accepting or rejecting"
           maxLength={100}
           className="w-full border p-2 rounded resize-none"
+          value={remark}
+          onChange={(e) => setRemark(e.target.value)}
+          rows={3}
         />
       </div>
 
       {/* Action Buttons - Stick to bottom */}
       <div className="flex gap-3 justify-center pt-4 mt-auto">
-        <button className="bg-red-500 text-white px-4 py-2 rounded cursor-pointer">
-          Decline
+        <button 
+          className="bg-red-500 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
+          onClick={() => handleApproval('DECLINED')}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Processing...' : 'Decline'}
         </button>
-        <button className="bg-red-300 text-white px-4 py-2 rounded cursor-pointer">
-          Hold
+        <button 
+          className="bg-red-300 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
+          onClick={() => handleApproval('PENDING')}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Processing...' : 'Hold'}
         </button>
-        <button className="bg-green-500 text-white px-4 py-2 rounded cursor-pointer">
-          Approve
+        <button 
+          className="bg-green-500 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
+          onClick={() => handleApproval('ACCEPTED')}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Processing...' : 'Approve'}
         </button>
       </div>
     </div>
