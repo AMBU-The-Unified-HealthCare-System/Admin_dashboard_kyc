@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { CiCircleCheck } from "react-icons/ci";
 import Pagination from "../Logindetails/Pagination";
-import { FaEye } from "react-icons/fa";
+import { FaEye, FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
 import Sidemodal from "../Sidemodal";
 import { TbPhoneCalling } from "react-icons/tb";
+import axios from "axios";
 
 interface DriverResponse {
   _id: string;
@@ -36,6 +36,14 @@ interface DriverResponse {
   esignDetails: any;
 }
 
+interface ApprovalStatus {
+  aadhaar_details: { status: string; remark?: string };
+  pan_details: { status: string; remark?: string };
+  dl_details: { status: string; remark?: string };
+  bank_details: { status: string; remark?: string };
+  rc_details: { status: string; remark?: string };
+}
+
 interface DriversApiResponse {
   success: boolean;
   data: DriverResponse[];
@@ -64,7 +72,7 @@ interface PendingkycProps {
   selectedDate: Date | null;
 }
 
-const DriverDetails: React.FC<PendingkycProps> = ({ 
+const DriverDetailsKYC: React.FC<PendingkycProps> = ({ 
   searchTerm, 
   entriesPerPage, 
   selectedDate 
@@ -74,12 +82,14 @@ const DriverDetails: React.FC<PendingkycProps> = ({
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [approvalStatuses, setApprovalStatuses] = useState<Record<string, ApprovalStatus>>({});
   
   const [modalData, setModalData] = useState<{
     isOpen: boolean;
     fieldLabel: string;
     fieldValue: string;
     driverName: string;
+    driverId: string;
     kycDetails: any;
     fieldType: string;
   }>({
@@ -87,9 +97,41 @@ const DriverDetails: React.FC<PendingkycProps> = ({
     fieldLabel: "",
     fieldValue: "",
     driverName: "",
+    driverId: "",
     kycDetails: null,
     fieldType: "",
   });
+
+  // Fixed: Fetch approval statuses for all drivers
+  const fetchApprovalStatuses = async (driverIds: string[]) => {
+    try {
+      const statusPromises = driverIds.map(async (driverId) => {
+        try {
+          const response = await axios.get(`http://localhost:3000/driver/approval/${driverId}`);
+          if (response.data.success) {
+            // Fixed: Access response.data instead of response
+            return { driverId, status: response.data.data };
+          }
+        } catch (error) {
+          console.error(`Error fetching approval for driver ${driverId}:`, error);
+        }
+        return { driverId, status: null };
+      });
+
+      const results = await Promise.all(statusPromises);
+      const statusMap: Record<string, ApprovalStatus> = {};
+      
+      results.forEach(({ driverId, status }) => {
+        if (status) {
+          statusMap[driverId] = status;
+        }
+      });
+      
+      setApprovalStatuses(statusMap);
+    } catch (error) {
+      console.error('Error fetching approval statuses:', error);
+    }
+  };
 
   const fetchDrivers = async (page: number) => {
     setLoading(true);
@@ -113,22 +155,36 @@ const DriverDetails: React.FC<PendingkycProps> = ({
         params.append('date', formattedDate);
       }
 
-      const response = await fetch(`http://localhost:3000/driver/getDrivers?${params.toString()}`);
+      const response = await axios.get(`http://localhost:3000/driver/getDrivers?${params.toString()}`);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Fixed: Check response.data.success instead of response status
+      if (!response.data.success) {
+        throw new Error(`API error: ${response.data.message || 'Unknown error'}`);
       }
       
-      const data: DriversApiResponse = await response.json();
-      console.log(data)
+      // Fixed: Access response.data directly
+      const data: DriversApiResponse = response.data;
+      console.log(data);
+      
       if (data.success) {
         setDrivers(data.data);
         setTotalPages(data.pagination.totalPages);
+        
+        // Fetch approval statuses for the current drivers
+        const driverIds = data.data.map(driver => driver._id);
+        if (driverIds.length > 0) {
+          await fetchApprovalStatuses(driverIds);
+        }
       } else {
         throw new Error('API returned unsuccessful response');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch drivers');
+      // Enhanced error handling
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message || 'Network error occurred');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to fetch drivers');
+      }
       console.error('Error fetching drivers:', err);
     } finally {
       setLoading(false);
@@ -150,6 +206,7 @@ const DriverDetails: React.FC<PendingkycProps> = ({
       fieldLabel: label, 
       fieldValue: value,
       driverName: driver.name,
+      driverId: driver._id,
       kycDetails: driver.kycDetails,
       fieldType: fieldType
     });
@@ -160,9 +217,15 @@ const DriverDetails: React.FC<PendingkycProps> = ({
       ...modalData, 
       isOpen: false,
       driverName: "",
+      driverId: "",
       kycDetails: null,
       fieldType: ""
     });
+  };
+
+  const handleApprovalUpdate = () => {
+    // Refresh the drivers list and approval statuses after approval update
+    fetchDrivers(currentPage);
   };
 
   const handlePageChange = (page: number) => {
@@ -171,7 +234,7 @@ const DriverDetails: React.FC<PendingkycProps> = ({
 
   // Helper function to safely get KYC document numbers
   const getKycValue = (driver: DriverResponse, field: string) => {
-    console.log(driver)
+    console.log(driver);
     switch (field) {
       case 'aadhar':
         return driver.kycDetails?.aadhaar_detail?.aadhar_number || 'N/A';
@@ -185,6 +248,43 @@ const DriverDetails: React.FC<PendingkycProps> = ({
         return driver.kycDetails?.rc_detail?.reference_id || 'N/A';
       default:
         return 'N/A';
+    }
+  };
+
+  // Helper function to get approval status icon and color
+  const getApprovalStatusIcon = (driverId: string, fieldType: string) => {
+    const approval = approvalStatuses[driverId];
+    if (!approval) return <FaClock className="text-gray-400" size={12} />;
+
+    let status = '';
+    switch (fieldType) {
+      case 'aadhar':
+        status = approval.aadhaar_details?.status || 'PENDING';
+        break;
+      case 'pan':
+        status = approval.pan_details?.status || 'PENDING';
+        break;
+      case 'dl':
+        status = approval.dl_details?.status || 'PENDING';
+        break;
+      case 'bank':
+        status = approval.bank_details?.status || 'PENDING';
+        break;
+      case 'rc':
+        status = approval.rc_details?.status || 'PENDING';
+        break;
+      default:
+        status = 'PENDING';
+    }
+
+    switch (status) {
+      case 'ACCEPTED':
+        return <FaCheckCircle className="text-green-500" size={12} />;
+      case 'DECLINED':
+        return <FaTimesCircle className="text-red-500" size={12} />;
+      case 'PENDING':
+      default:
+        return <FaClock className="text-gray-400" size={12} />;
     }
   };
 
@@ -227,29 +327,33 @@ const DriverDetails: React.FC<PendingkycProps> = ({
               className="grid grid-cols-[repeat(10,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center text-nowrap"
             >
               <div>{driver.name}</div>
-              <div className="text-blue-600 flex gap-1 items-center cursor-pointer" 
+              <div className="text-blue-600 flex gap-1 items-center cursor-pointer justify-between" 
                    onClick={() => openModal("Aadhaar Details", getKycValue(driver, 'aadhar'), driver, 'aadhar')}>
                 {getKycValue(driver, 'aadhar')} 
-                <CiCircleCheck className="text-gray-500" size={15} />
+                {getApprovalStatusIcon(driver._id, 'aadhar')}
               </div>
-              <div className="text-blue-600 flex gap-1 items-center cursor-pointer"
+              <div className="text-blue-600 flex gap-1 items-center cursor-pointer justify-between"
                    onClick={() => openModal("PAN Details", getKycValue(driver, 'pan'), driver, 'pan')}>
                 {getKycValue(driver, 'pan')} 
-                <CiCircleCheck className="text-gray-500" size={15} />
+                {getApprovalStatusIcon(driver._id, 'pan')}
               </div> 
-              <div className="text-blue-600 flex gap-1 items-center cursor-pointer"
+              <div className="text-blue-600 flex gap-1 items-center cursor-pointer justify-between"
                    onClick={() => openModal("Driving License Details", getKycValue(driver, 'dl'), driver, 'dl')}>
                 {getKycValue(driver, 'dl')}  
-                <CiCircleCheck className="text-gray-500" size={15} />
+                {getApprovalStatusIcon(driver._id, 'dl')}
               </div>
-              <div className="flex gap-4 items-center cursor-pointer text-blue-600" 
+              <div className="flex gap-4 items-center cursor-pointer text-blue-600 justify-between" 
                    onClick={() => openModal("Bank Account Details", getKycValue(driver, 'bank'), driver, 'bank')}>
                 {getKycValue(driver, 'bank')}
+                {getApprovalStatusIcon(driver._id, 'bank')}
               </div>
-              <div className="text-blue-600 flex gap-7 items-center cursor-pointer"
+              <div className="text-blue-600 flex gap-7 items-center cursor-pointer justify-between"
                    onClick={() => openModal("Registration Certificate Details", getKycValue(driver, 'rc'), driver, 'rc')}>
                 {getKycValue(driver, 'rc')} 
-                <FaEye className="text-black" />
+                <div className="flex gap-1 items-center">
+                  <FaEye className="text-black" />
+                  {getApprovalStatusIcon(driver._id, 'rc')}
+                </div>
               </div>
               <div>{driver.vehicleNumber}</div>
               <div className="text-orange-400 border border-amber-500 rounded-md text-center w-fit text-xs p-0.5 px-2  bg-red-50 cursor-pointer">
@@ -286,11 +390,13 @@ const DriverDetails: React.FC<PendingkycProps> = ({
         fieldLabel={modalData.fieldLabel}
         fieldValue={modalData.fieldValue}
         driverName={modalData.driverName}
+        driverId={modalData.driverId}
         kycDetails={modalData.kycDetails}
         fieldType={modalData.fieldType}
+        onApprovalUpdate={handleApprovalUpdate}
       />
     </>
   );
 };
 
-export default DriverDetails;
+export default DriverDetailsKYC
