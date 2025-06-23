@@ -13,15 +13,6 @@ interface SideModalProps {
   onApprovalUpdate?: () => void;
 }
 
-// Ambulance type enum
-enum AmbulanceType {
-  MFR = "MFR - medical first responder",
-  PTS = "PTS - patient transport support",
-  BLS = "BLS - basic life support",
-  DBA = "DBA - dead body ambulance",
-  ALS = "ALS - advance life support",
-}
-
 const Sidemodal: React.FC<SideModalProps> = ({
   isOpen,
   onClose,

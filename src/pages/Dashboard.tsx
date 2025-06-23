@@ -1,10 +1,27 @@
 import React from 'react';
 import Chart from '../components/DashboardComponents/Chart';
 
+interface DashboardStats {
+  totalVerifiedUsers?: number;
+  totalFailedVerification?: number;
+  totalPendingVerification?: number;
+  totalUsers?: number;
+  totalApprovedVerification?: number;
+  totalDeclinedVerification?: number;
+  totalLoginDrivers?: number;
+}
+
+interface StatCardProps {
+  title: string;
+  value?: number;
+  bgColor: string;
+  loading: boolean;
+}
+
 const useDashboardStats = () => {
-  const [stats, setStats] = React.useState(null);
+  const [stats, setStats] = React.useState<DashboardStats | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   const fetchStats = async () => {
     try {
@@ -32,7 +49,8 @@ const useDashboardStats = () => {
         throw new Error(result.message || 'Failed to fetch dashboard statistics');
       }
     } catch (err) {
-      setError(err.message || 'An unexpected error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
       console.error('Dashboard stats fetch error:', err);
       
       // Mock data for demo purposes (remove in production)
@@ -55,7 +73,7 @@ const useDashboardStats = () => {
 };
 
 // Loading component
-const StatCard = ({ title, value, bgColor, loading }) => (
+const StatCard: React.FC<StatCardProps> = ({ title, value, bgColor, loading }) => (
   <div className="bg-white w-60 h-20 rounded-md border border-gray-300">
     <div className="flex items-center gap-5 p-3">
       <div className={`w-6 h-6 ${bgColor} rounded-full`}></div>

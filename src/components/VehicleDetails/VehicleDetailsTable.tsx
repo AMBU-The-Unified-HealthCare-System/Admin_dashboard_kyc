@@ -150,7 +150,7 @@ const VehicleDetailsTable = ({
   };
 
   // Fetch vehicles from API based on owner type
-  const fetchVehicles = async (page: number = 1) => {
+  const fetchVehicles = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -186,7 +186,7 @@ const VehicleDetailsTable = ({
         // Filter data based on search term
         let filteredVehicles = transformedData;
         if (searchTerm.trim()) {
-          filteredVehicles = transformedData.filter(vehicle => 
+          filteredVehicles = transformedData.filter((vehicle: Vehicle) => 
             vehicle.vehicleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
             vehicle.fleetOwnerId.toLowerCase().includes(searchTerm.toLowerCase())
           );
@@ -217,7 +217,7 @@ const VehicleDetailsTable = ({
 
   // Fetch vehicles data when page or filters change
   useEffect(() => {
-    fetchVehicles(currentPage);
+    fetchVehicles();
   }, [currentPage, searchTerm, entriesPerPage, selectedDate, currentOwnerType]);
 
   const handlePageChange = (page: number) => {
@@ -283,7 +283,7 @@ const VehicleDetailsTable = ({
 
   const handleApprovalUpdate = () => {
     // Refresh the vehicles data after approval update
-    fetchVehicles(currentPage);
+    fetchVehicles();
   };
 
   // Loading state
@@ -302,7 +302,7 @@ const VehicleDetailsTable = ({
       <div className="flex flex-col justify-center items-center h-64">
         <div className="text-red-600 mb-4">Error: {error}</div>
         <button 
-          onClick={() => fetchVehicles(currentPage)}
+          onClick={() => fetchVehicles()}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           Retry
