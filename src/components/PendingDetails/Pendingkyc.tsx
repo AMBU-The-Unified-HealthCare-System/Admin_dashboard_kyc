@@ -1,39 +1,45 @@
 import { useState, useEffect } from "react";
 import Pagination from "../Logindetails/Pagination";
-import { FaEye, FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
+import { FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
 import Sidemodal from "../Sidemodal";
-import { TbPhoneCalling } from "react-icons/tb";
 import axios from "axios";
 
-interface DriverResponse {
-  _id: string;
-  name: string;
-  driverId: string;
-  email: string;
-  phoneNumber: string;
-  address: string;
-  ambulanceCategory: string;
-  vehicleNumber: string;
-  model: string;
-  submissionDate: string;
-  lSubmissionDate: string;
-  kSubmissionDate: string;
-  v1Status: string;
-  v2Status: string;
-  status: string;
-  isEmailVerified: boolean;
-  isPhoneNumberVerified: boolean;
-  action: string;
-  kyc: string;
-  kycStep: string;
-  kycDetails: {
-    aadhaar_detail: any;
-    pan_detail: any;
-    dl_detail: any;
-    rc_detail: any;
-    bank_detail: any;
+interface KycDetails {
+  aadharDetails: {
+    aadhar_number?: number;
+    id?: string;
+  } | null;
+  drivingLicenseDetails: {
+    dl_number?: string;
+    rc_number?: string;
+    vehicle_number?: string;
+  } | null;
+}
+
+interface AdminResponse {
+  id: string;
+  aadharDetails: {
+    aadhar_number?: number;
+    id?: string;
+  } | null;
+  drivingLicenseDetails: {
+    dl_number?: string;
+    rc_number?: string;
+    vehicle_number?: string;
+  } | null;
+}
+
+interface AdminApiResponse {
+  success: boolean;
+  data: {
+    data: AdminResponse[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
   };
-  esignDetails: any;
 }
 
 interface ApprovalStatus {
@@ -42,28 +48,6 @@ interface ApprovalStatus {
   dl_details: { status: string; remark?: string };
   bank_details: { status: string; remark?: string };
   rc_details: { status: string; remark?: string };
-}
-
-interface DriversApiResponse {
-  success: boolean;
-  data: DriverResponse[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalDrivers: number;
-    limit: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
-  filters: {
-    search: string | null;
-    date: string | null;
-    appliedFilters: {
-      hasSearch: boolean;
-      hasDate: boolean;
-      totalFilters: number;
-    };
-  };
 }
 
 interface PendingkycProps {
@@ -78,11 +62,12 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
   selectedDate 
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [drivers, setDrivers] = useState<DriverResponse[]>([]);
+  const [adminData, setAdminData] = useState<AdminResponse[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [approvalStatuses, setApprovalStatuses] = useState<Record<string, ApprovalStatus>>({});
+  const [ownerType, setOwnerType] = useState("FLEET_OWNER"); // Default to Fleet Owner
   
   const [modalData, setModalData] = useState<{
     isOpen: boolean;
@@ -90,7 +75,7 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
     fieldValue: string;
     driverName: string;
     driverId: string;
-    kycDetails: any;
+    kycDetails: KycDetails | null;
     fieldType: string;
   }>({
     isOpen: false,
@@ -102,38 +87,7 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
     fieldType: "",
   });
 
-  // Fixed: Fetch approval statuses for all drivers
-  const fetchApprovalStatuses = async (driverIds: string[]) => {
-    try {
-      const statusPromises = driverIds.map(async (driverId) => {
-        try {
-          const response = await axios.get(`http://localhost:3000/driver/approval/${driverId}`);
-          if (response.data.success) {
-            // Fixed: Access response.data instead of response
-            return { driverId, status: response.data.data };
-          }
-        } catch (error) {
-          console.error(`Error fetching approval for driver ${driverId}:`, error);
-        }
-        return { driverId, status: null };
-      });
-
-      const results = await Promise.all(statusPromises);
-      const statusMap: Record<string, ApprovalStatus> = {};
-      
-      results.forEach(({ driverId, status }) => {
-        if (status) {
-          statusMap[driverId] = status;
-        }
-      });
-      
-      setApprovalStatuses(statusMap);
-    } catch (error) {
-      console.error('Error fetching approval statuses:', error);
-    }
-  };
-
-  const fetchDrivers = async (page: number) => {
+  const fetchAdminData = async (page: number) => {
     setLoading(true);
     setError(null);
     
@@ -155,59 +109,94 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
         params.append('date', formattedDate);
       }
 
-      const response = await axios.get(`http://localhost:3000/driver/getDrivers?${params.toString()}`);
+      // Use different API endpoints based on ownerType
+      const apiEndpoint = ownerType === 'FLEET_OWNER' 
+        ? 'https://api.india.ambuvians.in/api/admin/fleet-owner'
+        : 'https://api.india.ambuvians.in/api/admin/driver';
+
+      const response = await axios.get(`${apiEndpoint}?${params.toString()}`);
       
-      // Fixed: Check response.data.success instead of response status
       if (!response.data.success) {
         throw new Error(`API error: ${response.data.message || 'Unknown error'}`);
       }
       
-      // Fixed: Access response.data directly
-      const data: DriversApiResponse = response.data;
-      console.log(data);
+      const data: AdminApiResponse = response.data;
+      console.log(`${ownerType} API response:`, data);
       
       if (data.success) {
-        setDrivers(data.data);
-        setTotalPages(data.pagination.totalPages);
+        setAdminData(data.data.data);
+        setTotalPages(data.data.pagination.totalPages);
         
-        // Fetch approval statuses for the current drivers
-        const driverIds = data.data.map(driver => driver._id);
-        if (driverIds.length > 0) {
-          await fetchApprovalStatuses(driverIds);
+        // Fetch approval statuses for the current data
+        const adminIds = data.data.data.map(admin => admin.id);
+        if (adminIds.length > 0) {
+          await fetchApprovalStatuses(adminIds);
         }
       } else {
         throw new Error('API returned unsuccessful response');
       }
     } catch (err) {
-      // Enhanced error handling
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.message || err.message || 'Network error occurred');
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to fetch drivers');
+        setError(err instanceof Error ? err.message : 'Failed to fetch data');
       }
-      console.error('Error fetching drivers:', err);
+      console.error(`Error fetching ${ownerType.toLowerCase()} data:`, err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Effect to fetch drivers when component mounts or filters change
+  // Fixed: Fetch approval statuses for all admins
+  const fetchApprovalStatuses = async (adminIds: string[]) => {
+    try {
+      const statusPromises = adminIds.map(async (adminId) => {
+        try {
+          const response = await axios.get(`http://localhost:3000/driver/approval/${adminId}`);
+          if (response.data.success) {
+            return { adminId, status: response.data.data };
+          }
+        } catch (error) {
+          console.error(`Error fetching approval for admin ${adminId}:`, error);
+        }
+        return { adminId, status: null };
+      });
+
+      const results = await Promise.all(statusPromises);
+      const statusMap: Record<string, ApprovalStatus> = {};
+      
+      results.forEach(({ adminId, status }) => {
+        if (status) {
+          statusMap[adminId] = status;
+        }
+      });
+      
+      setApprovalStatuses(statusMap);
+    } catch (error) {
+      console.error('Error fetching approval statuses:', error);
+    }
+  };
+
+  // Effect to fetch data when component mounts or filters change
   useEffect(() => {
     setCurrentPage(1); // Reset to first page when filters change
-  }, [searchTerm, entriesPerPage, selectedDate]);
+  }, [searchTerm, entriesPerPage, selectedDate, ownerType]);
 
   useEffect(() => {
-    fetchDrivers(currentPage);
-  }, [currentPage, searchTerm, entriesPerPage, selectedDate]);
+    fetchAdminData(currentPage);
+  }, [currentPage, searchTerm, entriesPerPage, selectedDate, ownerType]);
 
-  const openModal = (label: string, value: string, driver: DriverResponse, fieldType: string) => {
+  const openModal = (label: string, value: string, admin: AdminResponse, fieldType: string) => {
     setModalData({ 
       isOpen: true, 
       fieldLabel: label, 
       fieldValue: value,
-      driverName: driver.name,
-      driverId: driver._id,
-      kycDetails: driver.kycDetails,
+      driverName: admin.id,
+      driverId: admin.id,
+      kycDetails: {
+        aadharDetails: admin.aadharDetails,
+        drivingLicenseDetails: admin.drivingLicenseDetails,
+      },
       fieldType: fieldType
     });
   };
@@ -224,8 +213,8 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
   };
 
   const handleApprovalUpdate = () => {
-    // Refresh the drivers list and approval statuses after approval update
-    fetchDrivers(currentPage);
+    // Refresh the data list and approval statuses after approval update
+    fetchAdminData(currentPage);
   };
 
   const handlePageChange = (page: number) => {
@@ -233,27 +222,21 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
   };
 
   // Helper function to safely get KYC document numbers
-  const getKycValue = (driver: DriverResponse, field: string) => {
-    console.log(driver);
+  const getKycValue = (admin: AdminResponse, field: string) => {
+    console.log(admin);
     switch (field) {
       case 'aadhar':
-        return driver.kycDetails?.aadhaar_detail?.aadhar_number || 'N/A';
-      case 'pan':
-        return driver.kycDetails?.pan_detail?.reference_id || 'N/A';
+        return admin.aadharDetails?.aadhar_number?.toString() || 'N/A';
       case 'dl':
-        return driver.kycDetails?.dl_detail?.dl_number || 'N/A';
-      case 'bank':
-        return driver.kycDetails?.bank_detail?.reference_id || 'N/A';
-      case 'rc':
-        return driver.kycDetails?.rc_detail?.reference_id || 'N/A';
+        return admin.drivingLicenseDetails?.dl_number || 'N/A';
       default:
         return 'N/A';
     }
   };
 
   // Helper function to get approval status icon and color
-  const getApprovalStatusIcon = (driverId: string, fieldType: string) => {
-    const approval = approvalStatuses[driverId];
+  const getApprovalStatusIcon = (adminId: string, fieldType: string) => {
+    const approval = approvalStatuses[adminId];
     if (!approval) return <FaClock className="text-gray-400" size={12} />;
 
     let status = '';
@@ -261,17 +244,8 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
       case 'aadhar':
         status = approval.aadhaar_details?.status || 'PENDING';
         break;
-      case 'pan':
-        status = approval.pan_details?.status || 'PENDING';
-        break;
       case 'dl':
         status = approval.dl_details?.status || 'PENDING';
-        break;
-      case 'bank':
-        status = approval.bank_details?.status || 'PENDING';
-        break;
-      case 'rc':
-        status = approval.rc_details?.status || 'PENDING';
         break;
       default:
         status = 'PENDING';
@@ -288,10 +262,10 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
     }
   };
 
-  if (loading && drivers.length === 0) {
+  if (loading && adminData.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg">Loading drivers...</div>
+        <div className="text-lg">Loading {ownerType.toLowerCase()} data...</div>
       </div>
     );
   }
@@ -306,6 +280,19 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
 
   return (
     <>
+      {/* Owner Type Dropdown */}
+      <div className="flex items-center gap-3 p-4 border-b border-gray-200">
+        <label className="text-sm font-medium text-gray-700">Owner Type:</label>
+        <select
+          value={ownerType}
+          onChange={(e) => setOwnerType(e.target.value)}
+          className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:border-blue-500"
+        >
+          <option value="FLEET_OWNER">Fleet Owner</option>
+          <option value="DRIVER">Driver</option>
+        </select>
+      </div>
+
       <div className="overflow-x-auto p-4 styled-scrollbar your-div">
         <div className="min-w-[2100px] h-[650px]">                                    
           <div className="grid grid-cols-[repeat(10,minmax(150px,1fr))] gap-x-12 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
@@ -321,54 +308,50 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
             <div>Call to Driver</div>
           </div>
 
-          {drivers.map((driver) => (
+          {adminData.map((admin) => (
             <div
-              key={driver._id}
+              key={admin.id}
               className="grid grid-cols-[repeat(10,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center text-nowrap"
             >
-              <div>{driver.name}</div>
+              <div>{admin.id}</div>
               <div className="text-blue-600 flex gap-1 items-center cursor-pointer justify-between" 
-                   onClick={() => openModal("Aadhaar Details", getKycValue(driver, 'aadhar'), driver, 'aadhar')}>
-                {getKycValue(driver, 'aadhar')} 
-                {getApprovalStatusIcon(driver._id, 'aadhar')}
+                   onClick={() => openModal("Aadhaar Details", getKycValue(admin, 'aadhar'), admin, 'aadhar')}>
+                {admin.aadharDetails?.aadhar_number ? admin.aadharDetails.aadhar_number.toString() : 'N/A'} 
+                {getApprovalStatusIcon(admin.id, 'aadhar')}
               </div>
-              <div className="text-blue-600 flex gap-1 items-center cursor-pointer justify-between"
-                   onClick={() => openModal("PAN Details", getKycValue(driver, 'pan'), driver, 'pan')}>
-                {getKycValue(driver, 'pan')} 
-                {getApprovalStatusIcon(driver._id, 'pan')}
+              <div className="text-blue-600 flex gap-1 items-center cursor-pointer justify-between">
+                N/A 
+                {getApprovalStatusIcon(admin.id, 'pan')}
               </div> 
               <div className="text-blue-600 flex gap-1 items-center cursor-pointer justify-between"
-                   onClick={() => openModal("Driving License Details", getKycValue(driver, 'dl'), driver, 'dl')}>
-                {getKycValue(driver, 'dl')}  
-                {getApprovalStatusIcon(driver._id, 'dl')}
+                   onClick={() => openModal("Driving License Details", getKycValue(admin, 'dl'), admin, 'dl')}>
+                {admin.drivingLicenseDetails?.dl_number || 'N/A'}  
+                {getApprovalStatusIcon(admin.id, 'dl')}
               </div>
-              <div className="flex gap-4 items-center cursor-pointer text-blue-600 justify-between" 
-                   onClick={() => openModal("Bank Account Details", getKycValue(driver, 'bank'), driver, 'bank')}>
-                {getKycValue(driver, 'bank')}
-                {getApprovalStatusIcon(driver._id, 'bank')}
+              <div className="flex gap-4 items-center cursor-pointer text-blue-600 justify-between"> 
+                N/A
+                {getApprovalStatusIcon(admin.id, 'bank')}
               </div>
-              <div className="text-blue-600 flex gap-7 items-center cursor-pointer justify-between"
-                   onClick={() => openModal("Registration Certificate Details", getKycValue(driver, 'rc'), driver, 'rc')}>
-                {getKycValue(driver, 'rc')} 
+              <div className="text-blue-600 flex gap-7 items-center cursor-pointer justify-between">
+                N/A 
                 <div className="flex gap-1 items-center">
-                  <FaEye className="text-black" />
-                  {getApprovalStatusIcon(driver._id, 'rc')}
+                  {getApprovalStatusIcon(admin.id, 'rc')}
                 </div>
               </div>
-              <div>{driver.vehicleNumber}</div>
+              <div>{admin.drivingLicenseDetails?.vehicle_number || 'N/A'}</div>
               <div className="text-orange-400 border border-amber-500 rounded-md text-center w-fit text-xs p-0.5 px-2  bg-red-50 cursor-pointer">
-                {driver.kyc}
+                {admin.aadharDetails?.id || 'N/A'}
               </div>
               <div className="text-orange-400 border border-amber-500 rounded-md text-center w-fit text-xs p-0.5 px-2  bg-red-50">
-                {driver.v2Status}
+                {admin.drivingLicenseDetails?.rc_number || 'N/A'}
               </div>
               <div className="text-blue-600 cursor-pointer hover:underline flex gap-1 items-center">
-                <TbPhoneCalling size={20} /> Make Call
+                Make Call
               </div>
             </div>
           ))}
 
-          {loading && drivers.length > 0 && (
+          {loading && adminData.length > 0 && (
             <div className="flex justify-center items-center py-4">
               <div className="text-gray-500">Loading...</div>
             </div>

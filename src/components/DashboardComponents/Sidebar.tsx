@@ -66,6 +66,17 @@ const Sidebar = () => {
             >
               <h4 className="ml-6"> Login Details</h4>
             </Link>
+            <Link
+              to="/dashboard/vehicledetails"
+              className={`flex gap-3 items-center cursor-pointer p-4  hover:bg-gray-100
+        ${
+          location.pathname === "/dashboard/vehicledetails"
+            ? "bg-gray-100  text-red-500"
+            : "text-black"
+        } `}
+            >
+              <h4 className="ml-6"> Vehicle Details</h4>
+            </Link>
           </div>
         )}
       </div>
