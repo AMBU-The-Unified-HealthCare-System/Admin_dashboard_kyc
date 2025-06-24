@@ -1,8 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
 import Pagination from "../Logindetails/Pagination";
 import Sidemodal from "../Sidemodal";
-import { CiEdit } from "react-icons/ci";
 import axios from "axios";
 
 // Types
@@ -49,17 +48,30 @@ interface ApprovalStatus {
   rc_details: { status: string; remark?: string };
 }
 
-interface ApiResponse {
-  success: boolean;
-  data: Driver[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalDrivers: number;
-    limit: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
+interface FleetOwner {
+  id: string;
+  registrationId: string;
+  isEmailVerified: boolean;
+  phoneNumber: string;
+  isPhoneNumberVerified: boolean;
+  address: {
+    placeName: string;
+    placeAddress: string;
+    alternateName: string | null;
+    eLoc: string | null;
+    coordinates: {
+      type: string;
+      coordinates: number[];
+    };
   };
+  kyc: string;
+  defaultLocation: {
+    type: string;
+    coordinates: number[];
+  };
+  kycStep: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface DriverDetailsProps {
@@ -78,10 +90,8 @@ const DriverDetails = ({
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [approvalStatuses, setApprovalStatuses] = useState<Record<string, ApprovalStatus>>({});
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [approvalStatuses] = useState<Record<string, ApprovalStatus>>({});
+  const [ownerType, setOwnerType] = useState("FLEET_OWNER"); // Default to Fleet Owner
   
   const [modalData, setModalData] = useState<{
     isOpen: boolean;
@@ -89,7 +99,7 @@ const DriverDetails = ({
     fieldValue: string;
     fieldType: string;
     driverId: string;
-    kycDetails: any;
+    kycDetails: Driver | null;
   }>({
     isOpen: false,
     fieldLabel: "",
@@ -98,59 +108,6 @@ const DriverDetails = ({
     driverId: "",
     kycDetails: null,
   });
-
-  // Ambulance categories based on your schema
-  const ambulanceCategories = [
-    "MFR - medical first responder",
-    "PTS - patient transport support", 
-    "BLS - basic life support",
-    "DBA - dead body smarty",
-    "ALS - advance life support"
-  ];
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setActiveDropdown(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // Fetch approval statuses for all drivers
-  const fetchApprovalStatuses = async (driverIds: string[]) => {
-    try {
-      const statusPromises = driverIds.map(async (driverId) => {
-        try {
-          const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/driver/approval/${driverId}`);
-          if (response.data.success) {
-            return { driverId, status: response.data.data };
-          }
-        } catch (error) {
-          console.error(`Error fetching approval for driver ${driverId}:`, error);
-        }
-        return { driverId, status: null };
-      });
-
-      const results = await Promise.all(statusPromises);
-      const statusMap: Record<string, ApprovalStatus> = {};
-      
-      results.forEach(({ driverId, status }) => {
-        if (status) {
-          statusMap[driverId] = status;
-        }
-      });
-      
-      setApprovalStatuses(statusMap);
-    } catch (error) {
-      console.error('Error fetching approval statuses:', error);
-    }
-  };
 
   // Helper function to get approval status icon
   const getApprovalStatusIcon = (driverId: string, fieldType: string) => {
@@ -183,53 +140,8 @@ const DriverDetails = ({
     }
   };
 
-  // Update ambulance category
-  const updateAmbulanceCategory = async (driverId: string, newCategory: string) => {
-    try {
-      setUpdatingCategory(driverId);
-      
-      const response = await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/driver/update-ambulance-category/${driverId}`,
-        { ambulanceCategory: newCategory },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      if (response.status === 200 && response.data?.success) {
-        // Update the local state
-        setDrivers(prevDrivers => 
-          prevDrivers.map(driver => 
-            driver._id === driverId 
-              ? { ...driver, ambulanceCategory: newCategory }
-              : driver
-          )
-        );
-        setActiveDropdown(null);
-        
-        // Optional: Show success message
-        console.log('Ambulance category updated successfully');
-      } else {
-        throw new Error(response.data?.message || 'Failed to update ambulance category');
-      }
-    } catch (error) {
-      console.error('Error updating ambulance category:', error);
-      // Optional: Show error message to user
-      alert('Failed to update ambulance category. Please try again.');
-    } finally {
-      setUpdatingCategory(null);
-    }
-  };
-
-  // Toggle dropdown
-  const toggleDropdown = (driverId: string) => {
-    setActiveDropdown(activeDropdown === driverId ? null : driverId);
-  };
-
-  // Fetch drivers from API with filters
-  const fetchDrivers = async (page: number = 1) => {
+  // Fetch data from API based on owner type
+  const fetchData = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
@@ -246,37 +158,56 @@ const DriverDetails = ({
       if (selectedDate) {
         params.append('date', selectedDate.toISOString().split('T')[0]);
       }
+
+      // Use different API endpoints based on ownerType
+      const apiEndpoint = ownerType === 'FLEET_OWNER' 
+        ? 'https://api.india.ambuvians.in/api/fleetOwner/all'
+        : 'https://api.india.ambuvians.in/api/driver/all';
       
-      const response = await axios.get<ApiResponse>(
-        `${import.meta.env.VITE_BACKEND_URL}/driver/getDrivers?${params.toString()}`
-      );
+      const response = await axios.get(apiEndpoint);
       
       if (response.status !== 200) {
         throw new Error(`HTTP Error: ${response.status}`);
       }
       
       const result = response.data;
-      console.log(result);
+      console.log(`${ownerType} result:`, result);
       
       if (result.success && result.data) {
-        setDrivers(result.data);
-        setTotalPages(result.pagination?.totalPages || 1);
-        setCurrentPage(result.pagination?.currentPage || 1);
+        // Transform data to match driver format
+        const transformedData = result.data.map((item: FleetOwner) => ({
+          _id: item.id,
+          name: item.registrationId || item.id, // Using registrationId as name since there's no name field
+          driverId: item.registrationId || item.id,
+          email: 'N/A', // No email field in the response
+          phoneNumber: item.phoneNumber || 'N/A',
+          address: item.address?.placeAddress || 'N/A',
+          ambulanceCategory: 'N/A', // No ambulance category in data
+          vehicleNumber: 'N/A', // No vehicle number in data
+          model: 'N/A', // No model in data
+          submissionDate: new Date(item.createdAt).toLocaleDateString(),
+          lSubmissionDate: new Date(item.createdAt).toLocaleDateString(), // Created At
+          kSubmissionDate: new Date(item.updatedAt).toLocaleDateString(), // Updated At
+          v1Status: item.kyc || 'N/A',
+          v2Status: item.kycStep || 'N/A',
+          status: item.kyc || 'N/A',
+          isEmailVerified: item.isEmailVerified || false,
+          isPhoneNumberVerified: item.isPhoneNumberVerified || false,
+          action: 'View Details',
+        }));
         
-        // Fetch approval statuses for the current drivers
-        const driverIds = result.data.map(driver => driver._id);
-        if (driverIds.length > 0) {
-          await fetchApprovalStatuses(driverIds);
-        }
+        setDrivers(transformedData);
+        setTotalPages(1); // Since the API doesn't return pagination info
+        setCurrentPage(1);
       } else {
-        throw new Error(result.message || 'Failed to fetch drivers');
+        throw new Error(result.message || `Failed to fetch ${ownerType.toLowerCase()} data`);
       }
     } catch (err) {
-      console.error('Error fetching drivers:', err);
+      console.error(`Error fetching ${ownerType.toLowerCase()} data:`, err);
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || err.message || 'An error occurred while fetching drivers');
+        setError(err.response?.data?.message || err.message || `An error occurred while fetching ${ownerType.toLowerCase()} data`);
       } else {
-        setError(err instanceof Error ? err.message : 'An error occurred while fetching drivers');
+        setError(err instanceof Error ? err.message : `An error occurred while fetching ${ownerType.toLowerCase()} data`);
       }
     } finally {
       setLoading(false);
@@ -286,12 +217,12 @@ const DriverDetails = ({
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, entriesPerPage, selectedDate]);
+  }, [searchTerm, entriesPerPage, selectedDate, ownerType]);
 
-  // Fetch drivers when page or filters change
+  // Fetch data when page or filters change
   useEffect(() => {
-    fetchDrivers(currentPage);
-  }, [currentPage, searchTerm, entriesPerPage, selectedDate]);
+    fetchData(currentPage);
+  }, [currentPage, searchTerm, entriesPerPage, selectedDate, ownerType]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -316,8 +247,8 @@ const DriverDetails = ({
   };
 
   const handleApprovalUpdate = () => {
-    // Refresh the drivers list after approval update
-    fetchDrivers(currentPage);
+    // Refresh the data after approval update
+    fetchData(currentPage);
   };
 
   // Loading state
@@ -325,7 +256,7 @@ const DriverDetails = ({
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">Loading drivers...</span>
+        <span className="ml-3 text-gray-600">Loading {ownerType.toLowerCase()} data...</span>
       </div>
     );
   }
@@ -336,7 +267,7 @@ const DriverDetails = ({
       <div className="flex flex-col justify-center items-center h-64">
         <div className="text-red-600 mb-4">Error: {error}</div>
         <button 
-          onClick={() => fetchDrivers(currentPage)}
+          onClick={() => fetchData(currentPage)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           Retry
@@ -347,17 +278,29 @@ const DriverDetails = ({
 
   return (
     <>
+      {/* Owner Type Dropdown */}
+      <div className="flex items-center gap-3 p-4 border-b border-gray-200">
+        <label className="text-sm font-medium text-gray-700">Owner Type:</label>
+        <select
+          value={ownerType}
+          onChange={(e) => setOwnerType(e.target.value)}
+          className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:border-blue-500"
+        >
+          <option value="FLEET_OWNER">Fleet Owner</option>
+          <option value="DRIVER">Driver</option>
+        </select>
+      </div>
+
       <div className="overflow-x-auto p-4 styled-scrollbar your-div">
         <div className="min-w-[2100px] h-[650px]">
-          <div className="grid grid-cols-[repeat(11,minmax(150px,1fr))] gap-x-12 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
-            <div>Driver Name</div>
-            <div>Driver ID</div>
-            <div>Email ID</div>
+          <div className="grid grid-cols-[repeat(10,minmax(150px,1fr))] gap-x-12 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
+            <div>{ownerType === 'FLEET_OWNER' ? 'Fleet Owner Name' : 'Driver Name'}</div>
+            <div>{ownerType === 'FLEET_OWNER' ? 'Fleet Owner ID' : 'Driver ID'}</div>
             <div>Address</div>
             <div>Ambulance Category</div>
             <div>Submission Date & Time</div>
-            <div>L-Submission Date</div>
-            <div>K-Submission Date</div>
+            <div>Created At</div>
+            <div>Updated At</div>
             <div>V1 Status</div>
             <div>V2 Status</div>
             <div>Action</div>
@@ -365,25 +308,18 @@ const DriverDetails = ({
 
           {drivers.length === 0 ? (
             <div className="flex justify-center items-center h-32">
-              <span className="text-gray-500">No drivers found</span>
+              <span className="text-gray-500">No {ownerType.toLowerCase()} data found</span>
             </div>
           ) : (
             drivers.map((driver) => (
               <div
                 key={driver._id}
-                className="grid grid-cols-[repeat(11,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center"
+                className="grid grid-cols-[repeat(10,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center"
               >
                 <div className="truncate" title={driver.name}>{driver.name}</div>
                 <div className="text-blue-600 flex gap-1 items-center cursor-pointer">
                   <span className="truncate" title={driver.driverId}>{driver.driverId}</span>
                   {driver.isPhoneNumberVerified && <FaCheckCircle className="text-green-600 flex-shrink-0" />}
-                </div>
-                <div 
-                  className="text-blue-600 flex gap-1 justify-between items-center cursor-pointer" 
-                  onClick={() => openModal("Email ID", driver.email, "email", driver)}
-                >
-                  <span className="truncate max-w-32" title={driver.email}>{driver.email}</span>
-                  {getApprovalStatusIcon(driver._id, 'email')}
                 </div>
                 <div 
                   className="text-blue-600 flex justify-between gap-1 items-center cursor-pointer" 
@@ -401,47 +337,6 @@ const DriverDetails = ({
                     {driver.ambulanceCategory}
                   </span>
                   {getApprovalStatusIcon(driver._id, 'ambulance_category')}
-                  <div className="relative" ref={activeDropdown === driver._id ? dropdownRef : null}>
-                    <CiEdit 
-                      className="text-black cursor-pointer flex-shrink-0 hover:text-blue-600" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleDropdown(driver._id);
-                      }}
-                    />
-                    {activeDropdown === driver._id && (
-                      <div className="absolute top-full right-0 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-50">
-                        <div className="py-1 max-h-48 overflow-y-auto">
-                          {ambulanceCategories.map((category) => (
-                            <button
-                              key={category}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 ${
-                                driver.ambulanceCategory === category 
-                                  ? 'bg-blue-50 text-blue-600' 
-                                  : 'text-gray-700'
-                              } ${updatingCategory === driver._id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                              onClick={() => {
-                                if (updatingCategory !== driver._id && driver.ambulanceCategory !== category) {
-                                  updateAmbulanceCategory(driver._id, category);
-                                }
-                              }}
-                              disabled={updatingCategory === driver._id}
-                            >
-                              {category}
-                              {driver.ambulanceCategory === category && (
-                                <FaCheckCircle className="inline ml-2 text-green-500" size={12} />
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                        {updatingCategory === driver._id && (
-                          <div className="px-3 py-2 text-xs text-gray-500 border-t">
-                            Updating...
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
                 </div>
                 <div className="truncate" title={driver.submissionDate}>{driver.submissionDate}</div>
                 <div className="truncate" title={driver.lSubmissionDate}>{driver.lSubmissionDate}</div>

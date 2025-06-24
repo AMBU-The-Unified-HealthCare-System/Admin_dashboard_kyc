@@ -2,9 +2,9 @@ import { useState } from "react";
 import { CiSearch } from "react-icons/ci";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import DriverDetails from "../components/Logindetails/Driverdetails";
+import VehicleDetailsTable from "../components/VehicleDetails/VehicleDetailsTable";
 
-const LoginDetails = () => {
+const VehicleDetails = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [entries, setEntries] = useState(12);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -31,7 +31,7 @@ const LoginDetails = () => {
   return (
     <div className="overflow-hidden ">
       <div className=" bg-white w-full h-16 p-5 text-lg border border-gray-300 mt-5 ml-5 font-medium">
-        Login Details - Fleet Owners
+        Vehicle Details
       </div>
 
       {/* filter  */}
@@ -42,7 +42,7 @@ const LoginDetails = () => {
           <div className="flex border border-gray-300 rounded  ">
             <input
               type="text"
-              placeholder="Search by fleet owner name or ID"
+              placeholder="Search by vehicle number or type"
               className="outline-none p-2 w-52 text-sm "
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -91,7 +91,7 @@ const LoginDetails = () => {
       </div>
 
       {/* Table */}
-      <DriverDetails 
+      <VehicleDetailsTable 
         searchTerm={appliedFilters.searchTerm}
         entriesPerPage={appliedFilters.entries}
         selectedDate={appliedFilters.selectedDate}
@@ -101,4 +101,4 @@ const LoginDetails = () => {
   );
 };
 
-export default LoginDetails;
+export default VehicleDetails; 

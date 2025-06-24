@@ -91,13 +91,6 @@ const Sidemodal: React.FC<SideModalProps> = ({
       setIsSubmitting(false);
     }
   };
-  
-
-// Optional: Add environment variable to your .env file
-// VITE_BACKEND_URL=http://localhost:3000
-
-// Or if you're using Create React App instead of Vite:
-// REACT_APP_BACKEND_URL=http://localhost:3000
 
   const renderFieldDetails = () => {
     if (!kycDetails || !fieldType) {
@@ -278,6 +271,59 @@ const Sidemodal: React.FC<SideModalProps> = ({
             </div>
           </div>
         ); }
+
+      case 'ambulanceDetails':
+        return (
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-gray-800">Ambulance RC Details</h3>
+            <div className="space-y-2 text-sm">
+              <p><strong>Registration Number:</strong> {kycDetails?.reg_no || 'N/A'}</p>
+              <p><strong>Vehicle Number:</strong> {kycDetails?.vehicle_number || 'N/A'}</p>
+              <p><strong>Owner:</strong> {kycDetails?.owner || 'N/A'}</p>
+              <p><strong>Owner Count:</strong> {kycDetails?.owner_count || 'N/A'}</p>
+              <p><strong>Vehicle Manufacturer:</strong> {kycDetails?.vehicle_manufacturer_name || 'N/A'}</p>
+              <p><strong>Vehicle Colour:</strong> {kycDetails?.vehicle_colour || 'N/A'}</p>
+              <p><strong>Vehicle Type:</strong> {kycDetails?.type || 'N/A'}</p>
+              <p><strong>Class:</strong> {kycDetails?.class || 'N/A'}</p>
+              <p><strong>Chassis Number:</strong> {kycDetails?.chassis || 'N/A'}</p>
+              <p><strong>Engine Number:</strong> {kycDetails?.engine || 'N/A'}</p>
+              <p><strong>Registration Date:</strong> {kycDetails?.reg_date ? new Date(kycDetails.reg_date).toLocaleDateString() : 'N/A'}</p>
+              <p><strong>RC Expiry Date:</strong> {kycDetails?.rc_expiry_date ? new Date(kycDetails.rc_expiry_date).toLocaleDateString() : 'N/A'}</p>
+              <p><strong>RC Status:</strong> {kycDetails?.rc_status || 'N/A'}</p>
+              <p><strong>Status:</strong> {kycDetails?.status || 'N/A'}</p>
+              <p><strong>Vehicle Category:</strong> {kycDetails?.vehicle_category || 'N/A'}</p>
+              <p><strong>Seat Capacity:</strong> {kycDetails?.vehicle_seat_capacity || 'N/A'}</p>
+              <p><strong>Cubic Capacity:</strong> {kycDetails?.vehicle_cubic_capacity || 'N/A'} cc</p>
+              <p><strong>Gross Vehicle Weight:</strong> {kycDetails?.gross_vehicle_weight || 'N/A'} kg</p>
+              <p><strong>Unladen Weight:</strong> {kycDetails?.unladen_weight || 'N/A'} kg</p>
+              
+              <div className="border-t pt-2 mt-2">
+                <h4 className="font-semibold text-gray-700">Insurance Details</h4>
+                <p><strong>Insurance Company:</strong> {kycDetails?.vehicle_insurance_company_name || 'N/A'}</p>
+                <p><strong>Insurance Valid Upto:</strong> {kycDetails?.vehicle_insurance_upto ? new Date(kycDetails.vehicle_insurance_upto).toLocaleDateString() : 'N/A'}</p>
+                <p><strong>Insurance Policy Number:</strong> {kycDetails?.vehicle_insurance_policy_number || 'N/A'}</p>
+              </div>
+              
+              <div className="border-t pt-2 mt-2">
+                <h4 className="font-semibold text-gray-700">PUC Details</h4>
+                <p><strong>PUC Number:</strong> {kycDetails?.pucc_number || 'N/A'}</p>
+                <p><strong>PUC Valid Upto:</strong> {kycDetails?.pucc_upto ? new Date(kycDetails.pucc_upto).toLocaleDateString() : 'N/A'}</p>
+              </div>
+              
+              <div className="border-t pt-2 mt-2">
+                <h4 className="font-semibold text-gray-700">Financing Details</h4>
+                <p><strong>RC Financer:</strong> {kycDetails?.rc_financer || 'N/A'}</p>
+              </div>
+              
+              <div className="border-t pt-2 mt-2">
+                <h4 className="font-semibold text-gray-700">Reference Information</h4>
+                <p><strong>Verification ID:</strong> {kycDetails?.verification_id || 'N/A'}</p>
+                <p><strong>Reference ID:</strong> {kycDetails?.reference_id || 'N/A'}</p>
+                <p><strong>Ambulance ID:</strong> {kycDetails?.ambulanceId || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+        );
 
       default:
         return (
