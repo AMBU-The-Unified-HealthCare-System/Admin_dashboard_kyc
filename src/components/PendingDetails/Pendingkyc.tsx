@@ -4,18 +4,6 @@ import { FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
 import Sidemodal from "../Sidemodal";
 import axios from "axios";
 
-interface KycDetails {
-  aadharDetails: {
-    aadhar_number?: number;
-    id?: string;
-  } | null;
-  drivingLicenseDetails: {
-    dl_number?: string;
-    rc_number?: string;
-    vehicle_number?: string;
-  } | null;
-}
-
 interface AdminResponse {
   id: string;
   aadharDetails: {
@@ -75,7 +63,7 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
     fieldValue: string;
     driverName: string;
     driverId: string;
-    kycDetails: KycDetails | null;
+    kycDetails: Record<string, unknown> | undefined;
     fieldType: string;
   }>({
     isOpen: false,
@@ -83,7 +71,7 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
     fieldValue: "",
     driverName: "",
     driverId: "",
-    kycDetails: null,
+    kycDetails: undefined,
     fieldType: "",
   });
 
@@ -111,8 +99,8 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
 
       // Use different API endpoints based on ownerType
       const apiEndpoint = ownerType === 'FLEET_OWNER' 
-        ? 'https://api.india.ambuvians.in/api/admin/fleet-owner'
-        : 'https://api.india.ambuvians.in/api/admin/driver';
+        ? 'https://dev.api.india.ambuvians.in/api/admin/fleet-owner'
+        : 'https://dev.api.india.ambuvians.in/api/admin/driver';
 
       const response = await axios.get(`${apiEndpoint}?${params.toString()}`);
       
@@ -186,19 +174,74 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
     fetchAdminData(currentPage);
   }, [currentPage, searchTerm, entriesPerPage, selectedDate, ownerType]);
 
-  const openModal = (label: string, value: string, admin: AdminResponse, fieldType: string) => {
-    setModalData({ 
-      isOpen: true, 
-      fieldLabel: label, 
-      fieldValue: value,
-      driverName: admin.id,
-      driverId: admin.id,
-      kycDetails: {
-        aadharDetails: admin.aadharDetails,
-        drivingLicenseDetails: admin.drivingLicenseDetails,
-      },
-      fieldType: fieldType
-    });
+  const openModal = async (label: string, value: string, admin: AdminResponse, fieldType: string) => {
+    // If it's Aadhaar field and we have aadharDetails.id, fetch detailed Aadhaar data
+    if (fieldType === 'aadhar' && admin.aadharDetails?.id) {
+      try {
+        // Use different API endpoints based on ownerType
+        const apiEndpoint = ownerType === 'FLEET_OWNER' 
+          ? `https://dev.api.india.ambuvians.in/api/fleetOwner/aadhar/${admin.aadharDetails.id}`
+          : `https://dev.api.india.ambuvians.in/api/driver/aadhar/${admin.aadharDetails.id}`;
+
+        const response = await axios.get(apiEndpoint);
+        
+        if (response.data.success) {
+          setModalData({ 
+            isOpen: true, 
+            fieldLabel: label, 
+            fieldValue: value,
+            driverName: admin.id,
+            driverId: admin.id,
+            kycDetails: {
+              aadhaar_detail: response.data.data
+            },
+            fieldType: fieldType
+          });
+        } else {
+          console.error('Failed to fetch Aadhaar details:', response.data.message);
+          setModalData({ 
+            isOpen: true, 
+            fieldLabel: label, 
+            fieldValue: value,
+            driverName: admin.id,
+            driverId: admin.id,
+            kycDetails: {
+              aadharDetails: admin.aadharDetails,
+              drivingLicenseDetails: admin.drivingLicenseDetails,
+            },
+            fieldType: fieldType
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching Aadhaar details:', error);
+        setModalData({ 
+          isOpen: true, 
+          fieldLabel: label, 
+          fieldValue: value,
+          driverName: admin.id,
+          driverId: admin.id,
+          kycDetails: {
+            aadharDetails: admin.aadharDetails,
+            drivingLicenseDetails: admin.drivingLicenseDetails,
+          },
+          fieldType: fieldType
+        });
+      }
+    } else {
+      // For non-Aadhaar fields, use the existing logic
+      setModalData({ 
+        isOpen: true, 
+        fieldLabel: label, 
+        fieldValue: value,
+        driverName: admin.id,
+        driverId: admin.id,
+        kycDetails: {
+          aadharDetails: admin.aadharDetails,
+          drivingLicenseDetails: admin.drivingLicenseDetails,
+        },
+        fieldType: fieldType
+      });
+    }
   };
   
   const closeModal = () => {
@@ -207,7 +250,7 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
       isOpen: false,
       driverName: "",
       driverId: "",
-      kycDetails: null,
+      kycDetails: undefined,
       fieldType: ""
     });
   };
@@ -295,23 +338,18 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
 
       <div className="overflow-x-auto p-4 styled-scrollbar your-div">
         <div className="min-w-[2100px] h-[650px]">                                    
-          <div className="grid grid-cols-[repeat(10,minmax(150px,1fr))] gap-x-12 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
+          <div className="grid grid-cols-[repeat(5,minmax(150px,1fr))] gap-x-12 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
             <div>Driver Name</div>
             <div>Aadhar ID</div>
-            <div>PAN ID</div>
             <div>DL ID</div>
-            <div>Bank Account</div>
             <div>Registration Cert..</div>
             <div>Vehicle Number</div>
-            <div>Document</div>
-            <div>V2 Status</div>
-            <div>Call to Driver</div>
           </div>
 
           {adminData.map((admin) => (
             <div
               key={admin.id}
-              className="grid grid-cols-[repeat(10,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center text-nowrap"
+              className="grid grid-cols-[repeat(5,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center text-nowrap"
             >
               <div>{admin.id}</div>
               <div className="text-blue-600 flex gap-1 items-center cursor-pointer justify-between" 
@@ -319,18 +357,10 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
                 {admin.aadharDetails?.aadhar_number ? admin.aadharDetails.aadhar_number.toString() : 'N/A'} 
                 {getApprovalStatusIcon(admin.id, 'aadhar')}
               </div>
-              <div className="text-blue-600 flex gap-1 items-center cursor-pointer justify-between">
-                N/A 
-                {getApprovalStatusIcon(admin.id, 'pan')}
-              </div> 
               <div className="text-blue-600 flex gap-1 items-center cursor-pointer justify-between"
                    onClick={() => openModal("Driving License Details", getKycValue(admin, 'dl'), admin, 'dl')}>
                 {admin.drivingLicenseDetails?.dl_number || 'N/A'}  
                 {getApprovalStatusIcon(admin.id, 'dl')}
-              </div>
-              <div className="flex gap-4 items-center cursor-pointer text-blue-600 justify-between"> 
-                N/A
-                {getApprovalStatusIcon(admin.id, 'bank')}
               </div>
               <div className="text-blue-600 flex gap-7 items-center cursor-pointer justify-between">
                 N/A 
@@ -339,15 +369,6 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
                 </div>
               </div>
               <div>{admin.drivingLicenseDetails?.vehicle_number || 'N/A'}</div>
-              <div className="text-orange-400 border border-amber-500 rounded-md text-center w-fit text-xs p-0.5 px-2  bg-red-50 cursor-pointer">
-                {admin.aadharDetails?.id || 'N/A'}
-              </div>
-              <div className="text-orange-400 border border-amber-500 rounded-md text-center w-fit text-xs p-0.5 px-2  bg-red-50">
-                {admin.drivingLicenseDetails?.rc_number || 'N/A'}
-              </div>
-              <div className="text-blue-600 cursor-pointer hover:underline flex gap-1 items-center">
-                Make Call
-              </div>
             </div>
           ))}
 
