@@ -100,6 +100,7 @@ const DriverDetails = ({
     fieldType: string;
     driverId: string;
     kycDetails: Driver | null;
+    detailedInfo: FleetOwner | null;
   }>({
     isOpen: false,
     fieldLabel: "",
@@ -107,6 +108,7 @@ const DriverDetails = ({
     fieldType: "",
     driverId: "",
     kycDetails: null,
+    detailedInfo: null,
   });
 
   // Helper function to get approval status icon
@@ -140,6 +142,26 @@ const DriverDetails = ({
     }
   };
 
+  // Fetch detailed information for Fleet Owner or Driver
+  const fetchDetailedInfo = async (registrationId: string) => {
+    try {
+      const apiEndpoint = ownerType === 'FLEET_OWNER' 
+        ? `https://dev.api.india.ambuvians.in/api/fleetOwner?registrationId=${registrationId}`
+        : `https://dev.api.india.ambuvians.in/api/driver/${registrationId}`;
+      
+      const response = await axios.get(apiEndpoint);
+      
+      if (response.status === 200 && response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch detailed information');
+      }
+    } catch (error) {
+      console.error('Error fetching detailed info:', error);
+      throw error;
+    }
+  };
+
   // Fetch data from API based on owner type
   const fetchData = async (page: number = 1) => {
     try {
@@ -161,8 +183,8 @@ const DriverDetails = ({
 
       // Use different API endpoints based on ownerType
       const apiEndpoint = ownerType === 'FLEET_OWNER' 
-        ? 'https://api.india.ambuvians.in/api/fleetOwner/all'
-        : 'https://api.india.ambuvians.in/api/driver/all';
+        ? 'https://dev.api.india.ambuvians.in/api/fleetOwner/all'
+        : 'https://dev.api.india.ambuvians.in/api/driver/all';
       
       const response = await axios.get(apiEndpoint);
       
@@ -235,8 +257,30 @@ const DriverDetails = ({
       fieldValue: value,
       fieldType: fieldType,
       driverId: driver._id,
-      kycDetails: driver // Pass the entire driver object as kycDetails
+      kycDetails: driver, // Pass the entire driver object as kycDetails
+      detailedInfo: null,
     });
+  };
+
+  // Handle click on Fleet Owner ID or Driver ID
+  const handleIdClick = async (registrationId: string, driver: Driver) => {
+    try {
+      const detailedInfo = await fetchDetailedInfo(registrationId);
+      
+      setModalData({ 
+        isOpen: true, 
+        fieldLabel: `${ownerType === 'FLEET_OWNER' ? 'Fleet Owner' : 'Driver'} Details`, 
+        fieldValue: registrationId,
+        fieldType: 'details',
+        driverId: driver._id,
+        kycDetails: driver,
+        detailedInfo: detailedInfo,
+      });
+    } catch (error) {
+      console.error('Error fetching detailed info:', error);
+      // Fallback to regular modal
+      openModal(`${ownerType === 'FLEET_OWNER' ? 'Fleet Owner' : 'Driver'} ID`, registrationId, 'id', driver);
+    }
   };
 
   const closeModal = () => {
@@ -292,18 +336,14 @@ const DriverDetails = ({
       </div>
 
       <div className="overflow-x-auto p-4 styled-scrollbar your-div">
-        <div className="min-w-[2100px] h-[650px]">
-          <div className="grid grid-cols-[repeat(10,minmax(150px,1fr))] gap-x-12 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
+        <div className="min-w-[1950px] h-[650px]">
+          <div className="grid grid-cols-[repeat(6,minmax(150px,1fr))] gap-x-12 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
             <div>{ownerType === 'FLEET_OWNER' ? 'Fleet Owner Name' : 'Driver Name'}</div>
             <div>{ownerType === 'FLEET_OWNER' ? 'Fleet Owner ID' : 'Driver ID'}</div>
             <div>Address</div>
-            <div>Ambulance Category</div>
             <div>Submission Date & Time</div>
             <div>Created At</div>
             <div>Updated At</div>
-            <div>V1 Status</div>
-            <div>V2 Status</div>
-            <div>Action</div>
           </div>
 
           {drivers.length === 0 ? (
@@ -314,12 +354,15 @@ const DriverDetails = ({
             drivers.map((driver) => (
               <div
                 key={driver._id}
-                className="grid grid-cols-[repeat(10,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center"
+                className="grid grid-cols-[repeat(6,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center"
               >
                 <div className="truncate" title={driver.name}>{driver.name}</div>
-                <div className="text-blue-600 flex gap-1 items-center cursor-pointer">
+                <div 
+                  className="text-blue-600 flex gap-1 items-center cursor-pointer hover:underline"
+                  onClick={() => handleIdClick(driver.driverId, driver)}
+                  title={`Click to view ${ownerType === 'FLEET_OWNER' ? 'Fleet Owner' : 'Driver'} details`}
+                >
                   <span className="truncate" title={driver.driverId}>{driver.driverId}</span>
-                  {driver.isPhoneNumberVerified && <FaCheckCircle className="text-green-600 flex-shrink-0" />}
                 </div>
                 <div 
                   className="text-blue-600 flex justify-between gap-1 items-center cursor-pointer" 
@@ -328,28 +371,9 @@ const DriverDetails = ({
                   <span className="truncate max-w-32" title={driver.address}>{driver.address}</span>
                   {getApprovalStatusIcon(driver._id, 'address')}
                 </div>
-                <div className="text-blue-600 flex gap-5 items-center justify-between relative">
-                  <span 
-                    className="truncate cursor-pointer max-w-20" 
-                    title={driver.ambulanceCategory}
-                    onClick={() => openModal("Ambulance Category", driver.ambulanceCategory, "ambulance_category", driver)}
-                  >
-                    {driver.ambulanceCategory}
-                  </span>
-                  {getApprovalStatusIcon(driver._id, 'ambulance_category')}
-                </div>
                 <div className="truncate" title={driver.submissionDate}>{driver.submissionDate}</div>
                 <div className="truncate" title={driver.lSubmissionDate}>{driver.lSubmissionDate}</div>
                 <div className="truncate" title={driver.kSubmissionDate}>{driver.kSubmissionDate}</div>
-                <div className="text-orange-400 border border-amber-500 rounded-md text-center w-fit text-xs p-0.5 px-2 bg-red-50 truncate" title={driver.v1Status}>
-                  {driver.v1Status}
-                </div>
-                <div className="text-orange-400 border border-amber-500 rounded-md text-center w-fit text-xs p-0.5 px-2 bg-red-50 truncate" title={driver.v2Status}>
-                  {driver.v2Status}
-                </div>
-                <div className="text-blue-600 cursor-pointer hover:underline truncate" title={driver.action}>
-                  {driver.action}
-                </div>
               </div>
             ))
           )}
@@ -373,6 +397,7 @@ const DriverDetails = ({
         driverId={modalData.driverId}
         fieldType={modalData.fieldType}
         kycDetails={modalData.kycDetails}
+        detailedInfo={modalData.detailedInfo}
         onApprovalUpdate={handleApprovalUpdate}
       />
     </>

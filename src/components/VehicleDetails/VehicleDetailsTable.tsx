@@ -74,6 +74,27 @@ const VehicleDetailsTable = ({
     fieldType: string;
     vehicleId: string;
     vehicleDetails: Vehicle | null;
+    detailedInfo: {
+      registrationId?: string;
+      isEmailVerified?: boolean;
+      phoneNumber?: string;
+      isPhoneNumberVerified?: boolean;
+      address?: {
+        placeName?: string;
+        placeAddress?: string;
+        alternateName?: string | null;
+        eLoc?: string | null;
+        coordinates?: {
+          type: string;
+          coordinates: number[];
+        };
+      };
+      kyc?: string;
+      kycStep?: string;
+      createdAt?: string;
+      updatedAt?: string;
+      id?: string;
+    } | null;
   }>({
     isOpen: false,
     fieldLabel: "",
@@ -81,11 +102,23 @@ const VehicleDetailsTable = ({
     fieldType: "",
     vehicleId: "",
     vehicleDetails: null,
+    detailedInfo: null,
   });
 
   // Helper function to get approval status icon
   const getApprovalStatusIcon = (vehicleId: string, fieldType: string) => {
     const approval = approvalStatuses[vehicleId];
+    
+    // For isVerified field, check the actual vehicle data
+    if (fieldType === 'isVerified') {
+      const vehicle = vehicles.find(v => v._id === vehicleId);
+      if (vehicle?.isVerified) {
+        return <FaCheckCircle className="text-green-500" size={13} />;
+      } else {
+        return <FaClock className="text-gray-400" size={13} />;
+      }
+    }
+
     if (!approval) return <FaClock className="text-gray-400" size={13} />;
 
     let status = '';
@@ -114,6 +147,22 @@ const VehicleDetailsTable = ({
     }
   };
 
+  // Fetch fleet owner details
+  const fetchFleetOwnerDetails = async (ownerId: string) => {
+    try {
+      const response = await axios.get(`https://dev.api.india.ambuvians.in/api/fleetOwner/${ownerId}`);
+      
+      if (response.status === 200 && response.data.success && response.data.data) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch fleet owner details');
+      }
+    } catch (error) {
+      console.error('Error fetching fleet owner details:', error);
+      throw error;
+    }
+  };
+
   const handleAmbulanceTypeUpdate = async (vehicleId: string, ambulanceType: string) => {
     if (!ambulanceType.trim()) {
       alert('Please select an ambulance type');
@@ -123,7 +172,7 @@ const VehicleDetailsTable = ({
     setUpdatingAmbulanceTypes(prev => ({ ...prev, [vehicleId]: true }));
     try {
       const response = await axios.put(
-        `https://api.india.ambuvians.in/api/ambulance/${vehicleId}`,
+        `https://dev.api.india.ambuvians.in/api/ambulance/${vehicleId}`,
         {
           ambulanceType: ambulanceType
         }
@@ -156,7 +205,7 @@ const VehicleDetailsTable = ({
       setError(null);
       
       const response = await axios.get(
-        `https://api.india.ambuvians.in/api/ambulance/all?ownerType=${currentOwnerType}`
+        `https://dev.api.india.ambuvians.in/api/ambulance/all?ownerType=${currentOwnerType}`
       );
       
       if (response.status !== 200) {
@@ -168,7 +217,7 @@ const VehicleDetailsTable = ({
       
       if (result.success && result.data) {
         // Handle single object vs array response
-        let ambulanceData = Array.isArray(result.data) ? result.data : [result.data];
+        const ambulanceData = Array.isArray(result.data) ? result.data : [result.data];
         
         // Transform ambulance data to match vehicle format
         const transformedData = ambulanceData.map((ambulance: Ambulance) => ({
@@ -224,14 +273,15 @@ const VehicleDetailsTable = ({
     setCurrentPage(page);
   };
 
-  const openModal = async (label: string, value: string, fieldType: string, vehicle: Vehicle) => {
+  // Handle click on Vehicle ID - shows ambulance details
+  const handleVehicleIdClick = async (vehicle: Vehicle) => {
     try {
       // Fetch detailed ambulance information based on owner type using registration number
       let apiEndpoint = '';
       if (currentOwnerType === 'FLEET_OWNER') {
-        apiEndpoint = `https://api.india.ambuvians.in/api/fleetOwner/ambulance-rc/?reg_no=${vehicle.vehicleNumber}`;
+        apiEndpoint = `https://dev.api.india.ambuvians.in/api/fleetOwner/ambulance-rc/?reg_no=${vehicle.vehicleNumber}`;
       } else if (currentOwnerType === 'DRIVER') {
-        apiEndpoint = `https://api.india.ambuvians.in/api/driver/ambulance-rc/?reg_no=${vehicle.vehicleNumber}`;
+        apiEndpoint = `https://dev.api.india.ambuvians.in/api/driver/ambulance-rc/?reg_no=${vehicle.vehicleNumber}`;
       }
 
       if (apiEndpoint) {
@@ -244,20 +294,22 @@ const VehicleDetailsTable = ({
         setModalData({ 
           isOpen: true, 
           fieldLabel: "Ambulance RC Details", 
-          fieldValue: vehicle.vehicleNumber, // Pass vehicle number as fieldValue
-          fieldType: "ambulanceDetails", // Use "ambulanceDetails" fieldType to trigger formatted display
+          fieldValue: vehicle.vehicleNumber,
+          fieldType: "ambulanceDetails",
           vehicleId: vehicle._id,
-          vehicleDetails: detailedData // Pass the detailed RC data as kycDetails
+          vehicleDetails: detailedData,
+          detailedInfo: null,
         });
       } else {
         // Fallback to original behavior if ownerType is not recognized
         setModalData({ 
           isOpen: true, 
-          fieldLabel: label, 
-          fieldValue: value,
-          fieldType: fieldType,
+          fieldLabel: "Ambulance Details", 
+          fieldValue: JSON.stringify(vehicle, null, 2),
+          fieldType: "ambulanceDetails",
           vehicleId: vehicle._id,
-          vehicleDetails: vehicle
+          vehicleDetails: vehicle,
+          detailedInfo: null,
         });
       }
     } catch (error) {
@@ -265,12 +317,33 @@ const VehicleDetailsTable = ({
       // Fallback to original behavior if API call fails
       setModalData({ 
         isOpen: true, 
-        fieldLabel: label, 
-        fieldValue: value,
-        fieldType: fieldType,
+        fieldLabel: "Ambulance Details", 
+        fieldValue: JSON.stringify(vehicle, null, 2),
+        fieldType: "ambulanceDetails",
         vehicleId: vehicle._id,
-        vehicleDetails: vehicle
+        vehicleDetails: vehicle,
+        detailedInfo: null,
       });
+    }
+  };
+
+  // Handle click on Owner ID - shows fleet owner details
+  const handleOwnerIdClick = async (ownerId: string, vehicle: Vehicle) => {
+    try {
+      const fleetOwnerDetails = await fetchFleetOwnerDetails(ownerId);
+      
+      setModalData({ 
+        isOpen: true, 
+        fieldLabel: "Fleet Owner Details", 
+        fieldValue: ownerId,
+        fieldType: "details",
+        vehicleId: vehicle._id,
+        vehicleDetails: vehicle,
+        detailedInfo: fleetOwnerDetails,
+      });
+    } catch (error) {
+      console.error('Error fetching fleet owner details:', error);
+      alert('Failed to fetch fleet owner details');
     }
   };
 
@@ -281,9 +354,11 @@ const VehicleDetailsTable = ({
     });
   };
 
-  const handleApprovalUpdate = () => {
-    // Refresh the vehicles data after approval update
-    fetchVehicles();
+  // Custom approval handler for ambulance verification
+  const handleCustomApproval = () => {
+    // This will be called by Sidemodal, but we need to handle the approval logic differently
+    // The actual approval logic will be handled in the Sidemodal component itself
+    fetchVehicles(); // Refresh data after any approval update
   };
 
   // Loading state
@@ -327,9 +402,10 @@ const VehicleDetailsTable = ({
       </div>
 
       <div className="overflow-x-auto p-4 styled-scrollbar your-div">
-        <div className="min-w-[800px] h-[650px]">
-          <div className="grid grid-cols-[repeat(4,minmax(150px,1fr))] gap-x-12 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
+        <div className="min-w-[1000px] h-[650px]">
+          <div className="grid grid-cols-[repeat(5,minmax(150px,1fr))] gap-x-12 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
             <div>Vehicle ID</div>
+            <div>Owner ID</div>
             <div>Ambulance Type</div>
             <div>Vehicle Number</div>
             <div>Is Verified</div>
@@ -343,13 +419,22 @@ const VehicleDetailsTable = ({
             vehicles.map((vehicle) => (
               <div
                 key={vehicle._id}
-                className="grid grid-cols-[repeat(4,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center hover:bg-gray-50"
+                className="grid grid-cols-[repeat(5,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center hover:bg-gray-50"
               >
                 <div 
                   className="text-blue-600 flex gap-1 items-center cursor-pointer"
-                  onClick={() => openModal("Ambulance Details", JSON.stringify(vehicle, null, 2), "ambulanceDetails", vehicle)}
+                  onClick={() => handleVehicleIdClick(vehicle)}
                 >
                   <span className="truncate font-mono text-sm" title={vehicle._id}>{vehicle._id}</span>
+                </div>
+                <div className="text-blue-600 flex gap-1 items-center cursor-pointer">
+                  <span 
+                    className="truncate font-mono text-sm" 
+                    title={vehicle.fleetOwnerId}
+                    onClick={() => handleOwnerIdClick(vehicle.fleetOwnerId, vehicle)}
+                  >
+                    {vehicle.fleetOwnerId}
+                  </span>
                 </div>
                 <div className="text-blue-600 flex gap-1 justify-between items-center">
                   <div className="flex flex-col gap-2 w-full">
@@ -374,14 +459,14 @@ const VehicleDetailsTable = ({
                 </div>
                 <div 
                   className="text-blue-600 flex justify-between gap-1 items-center cursor-pointer"
-                  onClick={() => openModal("Ambulance Details", JSON.stringify(vehicle, null, 2), "ambulanceDetails", vehicle)}
+                  onClick={() => handleVehicleIdClick(vehicle)}
                 >
                   <span className="truncate max-w-32" title={vehicle.vehicleNumber}>{vehicle.vehicleNumber}</span>
                   {getApprovalStatusIcon(vehicle._id, 'vehicleNumber')}
                 </div>
                 <div 
                   className="text-blue-600 flex gap-5 items-center justify-between relative cursor-pointer"
-                  onClick={() => openModal("Ambulance Details", JSON.stringify(vehicle, null, 2), "ambulanceDetails", vehicle)}
+                  onClick={() => handleVehicleIdClick(vehicle)}
                 >
                   <span 
                     className="truncate max-w-20" 
@@ -414,7 +499,8 @@ const VehicleDetailsTable = ({
         driverId={modalData.vehicleId}
         fieldType={modalData.fieldType}
         kycDetails={modalData.vehicleDetails}
-        onApprovalUpdate={handleApprovalUpdate}
+        detailedInfo={modalData.detailedInfo}
+        onApprovalUpdate={handleCustomApproval}
       />
     </>
   );

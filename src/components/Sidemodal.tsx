@@ -8,8 +8,9 @@ interface SideModalProps {
   fieldValue: string;
   driverName: string;
   driverId: string;
-  kycDetails?: any; 
+  kycDetails?: Record<string, any> | null; 
   fieldType?: string; 
+  detailedInfo?: Record<string, any> | null;
   onApprovalUpdate?: () => void;
 }
 
@@ -21,12 +22,80 @@ const Sidemodal: React.FC<SideModalProps> = ({
   driverId,
   kycDetails,
   fieldType,
+  detailedInfo,
   onApprovalUpdate,
 }) => {
   const [remark, setRemark] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [editedAddress, setEditedAddress] = useState('');
+  const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
 
   if (!isOpen) return null;
+
+  // Google Places API function
+  const fetchPlaces = async (Query: string) => {
+    try {
+      console.log('Google Places API Key:', import.meta.env.VITE_GOOGLE_PLACE_SEARCH_KEY);
+      
+      if (!import.meta.env.VITE_GOOGLE_PLACE_SEARCH_KEY) {
+        console.error('Google Places API key not found');
+        return null;
+      }
+
+      // Step 1: Get place suggestions
+      const proxyUrl = 'https://api.allorigins.win/raw?url=';
+      const autocompleteUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(Query)}&key=${import.meta.env.VITE_GOOGLE_PLACE_SEARCH_KEY}`;
+      
+      const autocompleteResponse = await axios.get(proxyUrl + encodeURIComponent(autocompleteUrl));
+      
+      console.log('Google Places Autocomplete Response:', autocompleteResponse.data);
+      
+      if (!autocompleteResponse.data.predictions || autocompleteResponse.data.predictions.length === 0) {
+        console.error('No predictions found in Google Places API response');
+        return null;
+      }
+      
+      const most_relevant = autocompleteResponse.data.predictions[0];
+      console.log("most_relevant", JSON.stringify(most_relevant, null, 2));
+
+      // Step 2: Get detailed place information including coordinates
+      const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${most_relevant.place_id}&fields=geometry&key=${import.meta.env.VITE_GOOGLE_PLACE_SEARCH_KEY}`;
+      
+      const detailsResponse = await axios.get(proxyUrl + encodeURIComponent(detailsUrl));
+      
+      console.log('Google Places Details Response:', detailsResponse.data);
+      
+      let coordinates = {
+        type: 'Point',
+        coordinates: [77.3095562, 29.4503728] // Default coordinates as fallback
+      };
+
+      // Extract actual coordinates if available
+      if (detailsResponse.data.result && detailsResponse.data.result.geometry && detailsResponse.data.result.geometry.location) {
+        const location = detailsResponse.data.result.geometry.location;
+        coordinates = {
+          type: 'Point',
+          coordinates: [location.lng, location.lat] // [longitude, latitude]
+        };
+        console.log('Actual coordinates found:', coordinates);
+      } else {
+        console.log('Using default coordinates');
+      }
+
+      const formatted_address = {
+        placeName: most_relevant.structured_formatting.main_text,
+        placeAddress: most_relevant.description,
+        alternateName: null,
+        eLoc: most_relevant.place_id,
+        coordinates: coordinates,
+      };
+      return formatted_address;
+    } catch (error) {
+      console.error('Error in fetchPlaces:', error);
+      return null;
+    }
+  };
 
   // Map fieldType to database field names
   const getApprovalFieldName = (fieldType: string) => {
@@ -43,9 +112,76 @@ const Sidemodal: React.FC<SideModalProps> = ({
     }
   };
 
+  const handleAddressUpdate = async () => {
+    if (!editedAddress.trim()) {
+      alert('Please enter a valid address');
+      return;
+    }
+
+    setIsUpdatingAddress(true);
+    try {
+      // Use Google Places API to get formatted address
+      const formattedAddress = await fetchPlaces(editedAddress.trim());
+      
+      if (!formattedAddress) {
+        throw new Error('Failed to get formatted address from Google Places API');
+      }
+
+      // Use the new fleet owner address update endpoint
+      const apiEndpoint = `https://dev.api.india.ambuvians.in/api/fleetOwner/address/${driverId}`;
+
+      const response = await axios.put(apiEndpoint, {
+        address: formattedAddress
+      });
+
+      if (response.data.success) {
+        alert('Address updated successfully!');
+        setIsEditingAddress(false);
+        setEditedAddress('');
+        if (onApprovalUpdate) {
+          onApprovalUpdate();
+        }
+      } else {
+        throw new Error(response.data.message || 'Failed to update address');
+      }
+    } catch (error) {
+      console.error('Error updating address:', error);
+      alert(error instanceof Error ? error.message : 'Failed to update address');
+    } finally {
+      setIsUpdatingAddress(false);
+    }
+  };
+
   const handleApproval = async (status: 'ACCEPTED' | 'DECLINED' | 'PENDING') => {
     if (!fieldType || !driverId) {
       alert('Missing required information');
+      return;
+    }
+
+    // Handle ambulance verification
+    if (fieldType === 'ambulanceDetails') {
+      try {
+        const response = await axios.put(
+          `https://dev.api.india.ambuvians.in/api/ambulance/${driverId}`,
+          {
+            isVerified: status === 'ACCEPTED'
+          }
+        );
+
+        if (response.data.success) {
+          alert(`Ambulance verification ${status.toLowerCase()} successfully!`);
+          setRemark('');
+          onClose();
+          if (onApprovalUpdate) {
+            onApprovalUpdate();
+          }
+        } else {
+          throw new Error(response.data.message || 'Failed to update verification status');
+        }
+      } catch (error) {
+        console.error('Error updating ambulance verification:', error);
+        alert(error instanceof Error ? error.message : 'Failed to update verification status');
+      }
       return;
     }
   
@@ -93,6 +229,104 @@ const Sidemodal: React.FC<SideModalProps> = ({
   };
 
   const renderFieldDetails = () => {
+    // Handle detailed info display
+    if (fieldType === 'details' && detailedInfo) {
+      // Check if it's driver data (has firstName field)
+      if (detailedInfo.firstName) {
+        return (
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-gray-800">{fieldLabel}</h3>
+            <div className="space-y-2 text-sm">
+              <p><strong>First Name:</strong> {detailedInfo.firstName || 'N/A'}</p>
+              <p><strong>Last Name:</strong> {detailedInfo.LastName || 'N/A'}</p>
+              <p><strong>DL ID:</strong> {detailedInfo.dlId || 'N/A'}</p>
+              <p><strong>Phone Number:</strong> {detailedInfo.phoneNumber || 'N/A'}</p>
+              <p><strong>Email Verified:</strong> {detailedInfo.isEmailVerified ? 'Yes' : 'No'}</p>
+              <p><strong>Phone Verified:</strong> {detailedInfo.isPhoneNumberVerified ? 'Yes' : 'No'}</p>
+              <p><strong>KYC Status:</strong> {detailedInfo.kyc || 'N/A'}</p>
+              <p><strong>KYC Step:</strong> {detailedInfo.kycStep || 'N/A'}</p>
+              <p><strong>Status:</strong> {detailedInfo.status || 'N/A'}</p>
+              <p><strong>Created At:</strong> {detailedInfo.createdAt ? new Date(detailedInfo.createdAt).toLocaleString() : 'N/A'}</p>
+              <p><strong>Updated At:</strong> {detailedInfo.updatedAt ? new Date(detailedInfo.updatedAt).toLocaleString() : 'N/A'}</p>
+              
+              <div className="border-t pt-2 mt-2">
+                <h4 className="font-semibold text-gray-700">Vehicle Information</h4>
+                <p><strong>Ambulance Type:</strong> {detailedInfo.ambulanceType || 'N/A'}</p>
+                <p><strong>Vehicle Number:</strong> {detailedInfo.vehicleNumber || 'N/A'}</p>
+                <p><strong>Model:</strong> {detailedInfo.model || 'N/A'}</p>
+                <p><strong>Insurance Number:</strong> {detailedInfo.insuranceNumber || 'N/A'}</p>
+              </div>
+              
+              {detailedInfo.esign_document && (
+                <div className="border-t pt-2 mt-2">
+                  <h4 className="font-semibold text-gray-700">eSign Document</h4>
+                  <p><strong>Status:</strong> {detailedInfo.esign_document.status || 'N/A'}</p>
+                </div>
+              )}
+              
+              {detailedInfo.driverDefaultLocation && (
+                <div className="border-t pt-2 mt-2">
+                  <h4 className="font-semibold text-gray-700">Default Location</h4>
+                  <p><strong>Type:</strong> {detailedInfo.driverDefaultLocation.type || 'N/A'}</p>
+                  <p><strong>Coordinates:</strong> [{detailedInfo.driverDefaultLocation.coordinates.join(', ')}]</p>
+                </div>
+              )}
+              
+              {detailedInfo.driversCurrentLocation && (
+                <div className="border-t pt-2 mt-2">
+                  <h4 className="font-semibold text-gray-700">Current Location</h4>
+                  <p><strong>Type:</strong> {detailedInfo.driversCurrentLocation.type || 'N/A'}</p>
+                  <p><strong>Coordinates:</strong> [{detailedInfo.driversCurrentLocation.coordinates.join(', ')}]</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+      
+      // Fleet Owner data (has registrationId field)
+      return (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-gray-800">{fieldLabel}</h3>
+          <div className="space-y-2 text-sm">
+            <p><strong>Registration ID:</strong> {detailedInfo.registrationId || 'N/A'}</p>
+            <p><strong>Phone Number:</strong> {detailedInfo.phoneNumber || 'N/A'}</p>
+            <p><strong>Email Verified:</strong> {detailedInfo.isEmailVerified ? 'Yes' : 'No'}</p>
+            <p><strong>Phone Verified:</strong> {detailedInfo.isPhoneNumberVerified ? 'Yes' : 'No'}</p>
+            <p><strong>KYC Status:</strong> {detailedInfo.kyc || 'N/A'}</p>
+            <p><strong>KYC Step:</strong> {detailedInfo.kycStep || 'N/A'}</p>
+            <p><strong>Created At:</strong> {detailedInfo.createdAt ? new Date(detailedInfo.createdAt).toLocaleString() : 'N/A'}</p>
+            <p><strong>Updated At:</strong> {detailedInfo.updatedAt ? new Date(detailedInfo.updatedAt).toLocaleString() : 'N/A'}</p>
+            
+            {detailedInfo.address && (
+              <div>
+                <strong>Address:</strong>
+                <div className="ml-4 mt-1">
+                  <p>Place Name: {detailedInfo.address.placeName || 'N/A'}</p>
+                  <p>Full Address: {detailedInfo.address.placeAddress || 'N/A'}</p>
+                  <p>Alternate Name: {detailedInfo.address.alternateName || 'N/A'}</p>
+                  <p>eLoc: {detailedInfo.address.eLoc || 'N/A'}</p>
+                  {detailedInfo.address.coordinates && (
+                    <p>Coordinates: [{detailedInfo.address.coordinates.coordinates.join(', ')}]</p>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {detailedInfo.defaultLocation && (
+              <div>
+                <strong>Default Location:</strong>
+                <div className="ml-4 mt-1">
+                  <p>Type: {detailedInfo.defaultLocation.type || 'N/A'}</p>
+                  <p>Coordinates: [{detailedInfo.defaultLocation.coordinates.join(', ')}]</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     if (!kycDetails || !fieldType) {
       return (
         <div className="space-y-2">
@@ -118,7 +352,25 @@ const Sidemodal: React.FC<SideModalProps> = ({
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-gray-800">Address Details</h3>
             <div className="space-y-2 text-sm">
-              <p><strong>Address:</strong> {fieldValue}</p>
+              {isEditingAddress ? (
+                <div className="space-y-2">
+                  <p><strong>Current Address:</strong> {fieldValue}</p>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">New Address:</label>
+                    <textarea
+                      value={editedAddress}
+                      onChange={(e) => setEditedAddress(e.target.value)}
+                      className="w-full border p-2 rounded resize-none"
+                      rows={3}
+                      placeholder="Enter new address..."
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p><strong>Address:</strong> {fieldValue}</p>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -300,7 +552,7 @@ const Sidemodal: React.FC<SideModalProps> = ({
               <div className="border-t pt-2 mt-2">
                 <h4 className="font-semibold text-gray-700">Insurance Details</h4>
                 <p><strong>Insurance Company:</strong> {kycDetails?.vehicle_insurance_company_name || 'N/A'}</p>
-                <p><strong>Insurance Valid Upto:</strong> {kycDetails?.vehicle_insurance_upto ? new Date(kycDetails.vehicle_insurance_upto).toLocaleDateString() : 'N/A'}</p>
+                <p><strong>Insurance Valid Upto:</strong> {kycDetails?.vehicle_insurance_upto ? new Date(kycDetails.vehicle_insurance_upto).toLocaleString() : 'N/A'}</p>
                 <p><strong>Insurance Policy Number:</strong> {kycDetails?.vehicle_insurance_policy_number || 'N/A'}</p>
               </div>
               
@@ -347,40 +599,80 @@ const Sidemodal: React.FC<SideModalProps> = ({
       <div className="space-y-4 overflow-y-auto">
         {renderFieldDetails()}
 
-        <textarea
-          placeholder="Reason for accepting or rejecting"
-          maxLength={100}
-          className="w-full border p-2 rounded resize-none"
-          value={remark}
-          onChange={(e) => setRemark(e.target.value)}
-          rows={3}
-        />
+        {/* Only show approval controls if not showing details and not editing address and not address field type */}
+        {fieldType !== 'details' && !isEditingAddress && fieldType !== 'address' && (
+          <textarea
+            placeholder="Reason for accepting or rejecting"
+            maxLength={100}
+            className="w-full border p-2 rounded resize-none"
+            value={remark}
+            onChange={(e) => setRemark(e.target.value)}
+            rows={3}
+          />
+        )}
       </div>
 
-      {/* Action Buttons - Stick to bottom */}
-      <div className="flex gap-3 justify-center pt-4 mt-auto">
-        <button 
-          className="bg-red-500 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
-          onClick={() => handleApproval('DECLINED')}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Processing...' : 'Decline'}
-        </button>
-        <button 
-          className="bg-red-300 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
-          onClick={() => handleApproval('PENDING')}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Processing...' : 'Hold'}
-        </button>
-        <button 
-          className="bg-green-500 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
-          onClick={() => handleApproval('ACCEPTED')}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Processing...' : 'Approve'}
-        </button>
-      </div>
+      {/* Action Buttons */}
+      {fieldType !== 'details' && (
+        <div className="flex gap-3 justify-center pt-4 mt-auto">
+          {isEditingAddress ? (
+            <>
+              <button 
+                className="bg-gray-500 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
+                onClick={() => {
+                  setIsEditingAddress(false);
+                  setEditedAddress('');
+                }}
+                disabled={isUpdatingAddress}
+              >
+                Cancel
+              </button>
+              <button 
+                className="bg-green-500 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
+                onClick={handleAddressUpdate}
+                disabled={isUpdatingAddress || !editedAddress.trim()}
+              >
+                {isUpdatingAddress ? 'Updating...' : 'Approve'}
+              </button>
+            </>
+          ) : fieldType === 'address' ? (
+            // For address field type, only show edit button initially
+            <button 
+              className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-600"
+              onClick={() => {
+                setIsEditingAddress(true);
+                setEditedAddress(fieldValue);
+              }}
+            >
+              Edit Address
+            </button>
+          ) : (
+            <>
+              <button 
+                className="bg-red-500 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
+                onClick={() => handleApproval('DECLINED')}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Processing...' : 'Decline'}
+              </button>
+              <button 
+                className="bg-red-300 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
+                onClick={() => handleApproval('PENDING')}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Processing...' : 'Hold'}
+              </button>
+              <button 
+                className="bg-green-500 text-white px-4 py-2 rounded cursor-pointer disabled:opacity-50"
+                onClick={() => handleApproval('ACCEPTED')}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Processing...' : 'Approve'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };
