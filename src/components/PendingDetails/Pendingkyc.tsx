@@ -9,11 +9,14 @@ interface AdminResponse {
   aadharDetails: {
     aadhar_number?: number;
     id?: string;
+    isVerified?: boolean;
   } | null;
   drivingLicenseDetails: {
     dl_number?: string;
     rc_number?: string;
     vehicle_number?: string;
+    id?: string;
+    isVerified?: boolean;
   } | null;
 }
 
@@ -66,6 +69,7 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
     kycDetails: Record<string, unknown> | undefined;
     fieldType: string;
     detailedInfo?: Record<string, any> | null;
+    ownerType: string;
   }>({
     isOpen: false,
     fieldLabel: "",
@@ -75,6 +79,7 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
     kycDetails: undefined,
     fieldType: "",
     detailedInfo: null,
+    ownerType: "FLEET_OWNER",
   });
 
   const fetchAdminData = async (page: number) => {
@@ -101,8 +106,8 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
 
       // Use different API endpoints based on ownerType
       const apiEndpoint = ownerType === 'FLEET_OWNER' 
-        ? 'https://dev.api.india.ambuvians.in/api/admin/fleet-owner'
-        : 'https://dev.api.india.ambuvians.in/api/admin/driver';
+        ? `${import.meta.env.VITE_BACKEND_URL}/api/admin/fleet-owner`
+        : `${import.meta.env.VITE_BACKEND_URL}/api/admin/driver`;
 
       const response = await axios.get(`${apiEndpoint}?${params.toString()}`);
       
@@ -170,7 +175,7 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
   // Fetch driver details
   const fetchDriverDetails = async (driverId: string) => {
     try {
-      const response = await axios.get(`https://dev.api.india.ambuvians.in/api/fleetOwner/${driverId}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/fleetOwner/${driverId}`);
       
       if (response.status === 200 && response.data.success && response.data.data) {
         return response.data.data;
@@ -196,7 +201,8 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
         driverId: admin.id,
         kycDetails: undefined,
         fieldType: "details",
-        detailedInfo: driverDetails
+        detailedInfo: driverDetails,
+        ownerType: ownerType
       });
     } catch (error) {
       console.error('Error fetching driver details:', error);
@@ -217,8 +223,8 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
     if (fieldType === 'aadhar' && admin.aadharDetails?.id) {
       try {
         const apiEndpoint = ownerType === 'FLEET_OWNER' 
-          ? `https://dev.api.india.ambuvians.in/api/fleetOwner/aadhar/${admin.aadharDetails.id}`
-          : `https://dev.api.india.ambuvians.in/api/driver/aadhar/${admin.aadharDetails.id}`;
+          ? `${import.meta.env.VITE_BACKEND_URL}/api/fleetOwner/aadhar/${admin.aadharDetails.id}`
+          : `${import.meta.env.VITE_BACKEND_URL}/api/driver/aadhar/${admin.aadharDetails.id}`;
 
         const response = await axios.get(apiEndpoint);
         
@@ -228,11 +234,12 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
             fieldLabel: label, 
             fieldValue: value,
             driverName: admin.id,
-            driverId: admin.id,
+            driverId: admin.aadharDetails.id,
             kycDetails: {
               aadhaar_detail: response.data.data
             },
-            fieldType: fieldType
+            fieldType: fieldType,
+            ownerType: ownerType
           });
         } else {
           console.error('Failed to fetch Aadhaar details:', response.data.message);
@@ -241,12 +248,13 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
             fieldLabel: label, 
             fieldValue: value,
             driverName: admin.id,
-            driverId: admin.id,
+            driverId: admin.aadharDetails.id,
             kycDetails: {
               aadharDetails: admin.aadharDetails,
               drivingLicenseDetails: admin.drivingLicenseDetails,
             },
-            fieldType: fieldType
+            fieldType: fieldType,
+            ownerType: ownerType
           });
         }
       } catch (error) {
@@ -256,16 +264,70 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
           fieldLabel: label, 
           fieldValue: value,
           driverName: admin.id,
-          driverId: admin.id,
+          driverId: admin.aadharDetails.id,
           kycDetails: {
             aadharDetails: admin.aadharDetails,
             drivingLicenseDetails: admin.drivingLicenseDetails,
           },
-          fieldType: fieldType
+          fieldType: fieldType,
+          ownerType: ownerType
+        });
+      }
+    } else if (fieldType === 'dl' && admin.drivingLicenseDetails?.id) {
+      try {
+        const apiEndpoint = ownerType === 'FLEET_OWNER' 
+          ? `${import.meta.env.VITE_BACKEND_URL}/api/fleetOwner/driving-license/${admin.drivingLicenseDetails.id}`
+          : `${import.meta.env.VITE_BACKEND_URL}/api/driver/driving-license/${admin.drivingLicenseDetails.id}`;
+
+        const response = await axios.get(apiEndpoint);
+        
+        if (response.data.success) {
+          setModalData({ 
+            isOpen: true, 
+            fieldLabel: label, 
+            fieldValue: value,
+            driverName: admin.id,
+            driverId: admin.drivingLicenseDetails.id,
+            kycDetails: {
+              dl_detail: response.data.data
+            },
+            fieldType: fieldType,
+            ownerType: ownerType
+          });
+        } else {
+          console.error('Failed to fetch DL details:', response.data.message);
+          setModalData({ 
+            isOpen: true, 
+            fieldLabel: label, 
+            fieldValue: value,
+            driverName: admin.id,
+            driverId: admin.drivingLicenseDetails.id,
+            kycDetails: {
+              aadharDetails: admin.aadharDetails,
+              drivingLicenseDetails: admin.drivingLicenseDetails,
+            },
+            fieldType: fieldType,
+            ownerType: ownerType
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching DL details:', error);
+        setModalData({ 
+          isOpen: true, 
+          fieldLabel: label, 
+          fieldValue: value,
+          driverName: admin.id,
+          driverId: admin.drivingLicenseDetails.id,
+          kycDetails: {
+            aadharDetails: admin.aadharDetails,
+            drivingLicenseDetails: admin.drivingLicenseDetails,
+          },
+          fieldType: fieldType,
+          ownerType: ownerType
         });
       }
     } else {
-      // For non-Aadhaar fields, use the existing logic
+      // For non-Aadhar/DL fields, use the existing logic
       setModalData({ 
         isOpen: true, 
         fieldLabel: label, 
@@ -276,7 +338,8 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
           aadharDetails: admin.aadharDetails,
           drivingLicenseDetails: admin.drivingLicenseDetails,
         },
-        fieldType: fieldType
+        fieldType: fieldType,
+        ownerType: ownerType
       });
     }
   };
@@ -288,7 +351,8 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
       driverName: "",
       driverId: "",
       kycDetails: undefined,
-      fieldType: ""
+      fieldType: "",
+      ownerType: "FLEET_OWNER"
     });
   };
 
@@ -317,6 +381,27 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
   // Helper function to get approval status icon and color
   const getApprovalStatusIcon = (adminId: string, fieldType: string) => {
     const approval = approvalStatuses[adminId];
+    
+    // For Aadhar, check the isVerified field from the API response
+    if (fieldType === 'aadhar') {
+      const admin = adminData.find(a => a.id === adminId);
+      if (admin?.aadharDetails?.isVerified !== undefined) {
+        return admin.aadharDetails.isVerified 
+          ? <FaCheckCircle className="text-green-500" size={12} />
+          : <FaTimesCircle className="text-red-500" size={12} />;
+      }
+    }
+    
+    // For DL, check the isVerified field from the API response
+    if (fieldType === 'dl') {
+      const admin = adminData.find(a => a.id === adminId);
+      if (admin?.drivingLicenseDetails?.isVerified !== undefined) {
+        return admin.drivingLicenseDetails.isVerified 
+          ? <FaCheckCircle className="text-green-500" size={12} />
+          : <FaTimesCircle className="text-red-500" size={12} />;
+      }
+    }
+    
     if (!approval) return <FaClock className="text-gray-400" size={12} />;
 
     let status = '';
@@ -374,19 +459,17 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
       </div>
 
       <div className="overflow-x-auto p-4 styled-scrollbar your-div">
-        <div className="min-w-[2100px] h-[650px]">                                    
-          <div className="grid grid-cols-[repeat(5,minmax(150px,1fr))] gap-x-12 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
+        <div className="min-w-[800px] h-[650px]">                                    
+          <div className="grid grid-cols-3 gap-x-8 font-semibold w-full p-2 rounded-t text-nowrap bg-sky-50">
             <div>{ownerType === 'FLEET_OWNER' ? 'Fleet Owner Name' : 'Driver Name'}</div>
             <div>Aadhar ID</div>
             <div>DL ID</div>
-            {/* <div>Registration Cert..</div> */}
-            {/* <div>Vehicle Number</div> */}
           </div>
 
           {adminData.map((admin) => (
             <div
               key={admin.id}
-              className="grid grid-cols-[repeat(5,minmax(150px,1fr))] gap-x-12 text-sm p-3 items-center text-nowrap"
+              className="grid grid-cols-3 gap-x-8 text-sm p-3 items-center text-nowrap"
             >
               <div 
                 className="text-blue-600 cursor-pointer hover:underline"
@@ -404,13 +487,6 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
                 {admin.drivingLicenseDetails?.dl_number || 'N/A'}  
                 {getApprovalStatusIcon(admin.id, 'dl')}
               </div>
-              {/* <div className="text-blue-600 flex gap-7 items-center cursor-pointer justify-between">
-                N/A 
-                <div className="flex gap-1 items-center">
-                  {getApprovalStatusIcon(admin.id, 'rc')}
-                </div>
-              </div> */}
-              {/* <div>{admin.drivingLicenseDetails?.vehicle_number || 'N/A'}</div> */}
             </div>
           ))}
 
@@ -441,6 +517,7 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
         fieldType={modalData.fieldType}
         onApprovalUpdate={handleApprovalUpdate}
         detailedInfo={modalData.detailedInfo}
+        ownerType={modalData.ownerType}
       />
     </>
   );

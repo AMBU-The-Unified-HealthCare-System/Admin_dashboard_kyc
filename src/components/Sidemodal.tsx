@@ -97,6 +97,7 @@ interface SideModalProps {
   fieldType?: string;
   detailedInfo?: DetailedInfo | null;
   onApprovalUpdate?: () => void;
+  ownerType?: string;
 }
 
 const Sidemodal: React.FC<SideModalProps> = ({
@@ -109,6 +110,7 @@ const Sidemodal: React.FC<SideModalProps> = ({
   fieldType,
   detailedInfo,
   onApprovalUpdate,
+  ownerType,
 }) => {
   const [remark, setRemark] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -231,7 +233,7 @@ const Sidemodal: React.FC<SideModalProps> = ({
       }
 
       // Use the new fleet owner address update endpoint
-      const apiEndpoint = `https://dev.api.india.ambuvians.in/api/fleetOwner/address/${driverId}`;
+      const apiEndpoint = `${import.meta.env.VITE_BACKEND_URL}/api/fleetOwner/address/${driverId}`;
 
       const response = await axios.put(apiEndpoint, {
         address: formattedAddress,
@@ -265,11 +267,97 @@ const Sidemodal: React.FC<SideModalProps> = ({
       return;
     }
 
+    // Handle Aadhar verification
+    if (fieldType === "aadhar") {
+      try {
+        // Get the Aadhar details ID from kycDetails
+        const aadharId = kycDetails?.aadhaar_detail?.id || kycDetails?.aadharDetails?.id;
+        
+        if (!aadharId) {
+          alert("Aadhar ID not found");
+          return;
+        }
+
+        // Use the correct API endpoint based on owner type
+        const apiEndpoint = ownerType === 'DRIVER' 
+          ? `${import.meta.env.VITE_BACKEND_URL}/api/driver/aadhar/${aadharId}`
+          : `${import.meta.env.VITE_BACKEND_URL}/api/fleetOwner/aadhar/${aadharId}`;
+        
+        const response = await axios.put(apiEndpoint, {
+          isVerified: status === "ACCEPTED",
+        });
+
+        if (response.data.success) {
+          alert(`Aadhar verification ${status.toLowerCase()} successfully!`);
+          setRemark("");
+          onClose();
+          if (onApprovalUpdate) {
+            onApprovalUpdate();
+          }
+        } else {
+          throw new Error(
+            response.data.message || "Failed to update verification status"
+          );
+        }
+      } catch (error) {
+        console.error("Error updating Aadhar verification:", error);
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Failed to update verification status"
+        );
+      }
+      return;
+    }
+
+    // Handle Driving License verification
+    if (fieldType === "dl") {
+      try {
+        // Get the DL details ID from kycDetails
+        const dlId = kycDetails?.dl_detail?.id || kycDetails?.drivingLicenseDetails?.id;
+        
+        if (!dlId) {
+          alert("Driving License ID not found");
+          return;
+        }
+
+        // Use the correct API endpoint based on owner type
+        const apiEndpoint = ownerType === 'DRIVER' 
+          ? `${import.meta.env.VITE_BACKEND_URL}/api/driver/driving-license/${dlId}`
+          : `${import.meta.env.VITE_BACKEND_URL}/api/fleetOwner/driving-license/${dlId}`;
+        
+        const response = await axios.put(apiEndpoint, {
+          isVerified: status === "ACCEPTED",
+        });
+
+        if (response.data.success) {
+          alert(`Driving License verification ${status.toLowerCase()} successfully!`);
+          setRemark("");
+          onClose();
+          if (onApprovalUpdate) {
+            onApprovalUpdate();
+          }
+        } else {
+          throw new Error(
+            response.data.message || "Failed to update verification status"
+          );
+        }
+      } catch (error) {
+        console.error("Error updating Driving License verification:", error);
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Failed to update verification status"
+        );
+      }
+      return;
+    }
+
     // Handle ambulance verification
     if (fieldType === "ambulanceDetails") {
       try {
         const response = await axios.put(
-          `https://dev.api.india.ambuvians.in/api/ambulance/${driverId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/ambulance/${driverId}`,
           {
             isVerified: status === "ACCEPTED",
           }

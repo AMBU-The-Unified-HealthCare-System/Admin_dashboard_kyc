@@ -15,6 +15,7 @@ enum AmbulanceType {
 
 // Types
 interface Ambulance {
+  registrationId: string;
   id: string;
   ownerId: string;
   vehicleNumber: string;
@@ -28,6 +29,7 @@ interface Ambulance {
 }
 
 interface Vehicle {
+  registrationId: string;
   _id: string;
   ambulanceType: string;
   vehicleNumber: string;
@@ -150,7 +152,7 @@ const VehicleDetailsTable = ({
   // Fetch fleet owner details
   const fetchFleetOwnerDetails = async (ownerId: string) => {
     try {
-      const response = await axios.get(`https://dev.api.india.ambuvians.in/api/fleetOwner/${ownerId}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/fleetOwner/${ownerId}`);
       
       if (response.status === 200 && response.data.success && response.data.data) {
         return response.data.data;
@@ -172,7 +174,7 @@ const VehicleDetailsTable = ({
     setUpdatingAmbulanceTypes(prev => ({ ...prev, [vehicleId]: true }));
     try {
       const response = await axios.put(
-        `https://dev.api.india.ambuvians.in/api/ambulance/${vehicleId}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/ambulance/${vehicleId}`,
         {
           ambulanceType: ambulanceType
         }
@@ -205,7 +207,7 @@ const VehicleDetailsTable = ({
       setError(null);
       
       const response = await axios.get(
-        `https://dev.api.india.ambuvians.in/api/ambulance/all?ownerType=${currentOwnerType}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/ambulance/all?ownerType=${currentOwnerType}`
       );
       
       if (response.status !== 200) {
@@ -222,6 +224,7 @@ const VehicleDetailsTable = ({
         // Transform ambulance data to match vehicle format
         const transformedData = ambulanceData.map((ambulance: Ambulance) => ({
           _id: ambulance.id,
+          registrationId: ambulance.registrationId, // Use vehicle number as registration ID
           ambulanceType: ambulance.ambulanceType || 'N/A', // Use ambulanceType from API if available, otherwise 'N/A'
           vehicleNumber: ambulance.vehicleNumber,
           isVerified: ambulance.isVerified,
@@ -279,9 +282,9 @@ const VehicleDetailsTable = ({
       // Fetch detailed ambulance information based on owner type using registration number
       let apiEndpoint = '';
       if (currentOwnerType === 'FLEET_OWNER') {
-        apiEndpoint = `https://dev.api.india.ambuvians.in/api/fleetOwner/ambulance-rc/?reg_no=${vehicle.vehicleNumber}`;
+        apiEndpoint = `${import.meta.env.VITE_BACKEND_URL}/api/fleetOwner/ambulance-rc/?reg_no=${vehicle.vehicleNumber}`;
       } else if (currentOwnerType === 'DRIVER') {
-        apiEndpoint = `https://dev.api.india.ambuvians.in/api/driver/ambulance-rc/?reg_no=${vehicle.vehicleNumber}`;
+        apiEndpoint = `${import.meta.env.VITE_BACKEND_URL}/api/driver/ambulance-rc/?reg_no=${vehicle.vehicleNumber}`;
       }
 
       if (apiEndpoint) {
@@ -430,10 +433,10 @@ const VehicleDetailsTable = ({
                 <div className="text-blue-600 flex gap-1 items-center cursor-pointer">
                   <span 
                     className="truncate font-mono text-sm" 
-                    title={vehicle.fleetOwnerId}
+                    title={vehicle.registrationId}
                     onClick={() => handleOwnerIdClick(vehicle.fleetOwnerId, vehicle)}
                   >
-                    {vehicle.fleetOwnerId}
+                    {vehicle.registrationId}
                   </span>
                 </div>
                 <div className="text-blue-600 flex gap-1 justify-between items-center">

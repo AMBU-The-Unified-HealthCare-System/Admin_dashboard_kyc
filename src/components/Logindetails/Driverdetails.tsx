@@ -72,6 +72,7 @@ interface FleetOwner {
   kycStep: string;
   createdAt: string;
   updatedAt: string;
+  [key: string]: unknown; // Allow additional properties to match DetailedInfo interface
 }
 
 interface DriverDetailsProps {
@@ -146,8 +147,8 @@ const DriverDetails = ({
   const fetchDetailedInfo = async (registrationId: string) => {
     try {
       const apiEndpoint = ownerType === 'FLEET_OWNER' 
-        ? `https://dev.api.india.ambuvians.in/api/fleetOwner?registrationId=${registrationId}`
-        : `https://dev.api.india.ambuvians.in/api/driver/${registrationId}`;
+        ? `${import.meta.env.VITE_BACKEND_URL}/api/fleetOwner?registrationId=${registrationId}`
+        : `${import.meta.env.VITE_BACKEND_URL}/api/driver/${registrationId}`;
       
       const response = await axios.get(apiEndpoint);
       
@@ -183,8 +184,8 @@ const DriverDetails = ({
 
       // Use different API endpoints based on ownerType
       const apiEndpoint = ownerType === 'FLEET_OWNER' 
-        ? 'https://dev.api.india.ambuvians.in/api/fleetOwner/all'
-        : 'https://dev.api.india.ambuvians.in/api/driver/all';
+        ? `${import.meta.env.VITE_BACKEND_URL}/api/fleetOwner/all`
+        : `${import.meta.env.VITE_BACKEND_URL}/api/driver/all`;
       
       const response = await axios.get(apiEndpoint);
       
