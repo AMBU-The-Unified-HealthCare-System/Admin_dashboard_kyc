@@ -208,8 +208,8 @@ const DriverDetails = ({
           vehicleNumber: 'N/A', // No vehicle number in data
           model: 'N/A', // No model in data
           submissionDate: new Date(item.createdAt).toLocaleDateString(),
-          lSubmissionDate: new Date(item.createdAt).toLocaleDateString(), // Created At
-          kSubmissionDate: new Date(item.updatedAt).toLocaleDateString(), // Updated At
+          lSubmissionDate: new Date(item.createdAt).toLocaleDateString(),
+          kSubmissionDate: new Date(item.updatedAt).toLocaleDateString(),
           v1Status: item.kyc || 'N/A',
           v2Status: item.kycStep || 'N/A',
           status: item.kyc || 'N/A',
@@ -219,7 +219,7 @@ const DriverDetails = ({
         }));
         
         setDrivers(transformedData);
-        setTotalPages(1); // Since the API doesn't return pagination info
+        setTotalPages(1);
         setCurrentPage(1);
       } else {
         throw new Error(result.message || `Failed to fetch ${ownerType.toLowerCase()} data`);
@@ -236,12 +236,10 @@ const DriverDetails = ({
     }
   };
 
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, entriesPerPage, selectedDate, ownerType]);
 
-  // Fetch data when page or filters change
   useEffect(() => {
     fetchData(currentPage);
   }, [currentPage, searchTerm, entriesPerPage, selectedDate, ownerType]);
@@ -257,12 +255,11 @@ const DriverDetails = ({
       fieldValue: value,
       fieldType: fieldType,
       driverId: driver._id,
-      kycDetails: driver, // Pass the entire driver object as kycDetails
+      kycDetails: driver, 
       detailedInfo: null,
     });
   };
 
-  // Handle click on Fleet Owner ID or Driver ID
   const handleIdClick = async (registrationId: string, driver: Driver) => {
     try {
       const detailedInfo = await fetchDetailedInfo(registrationId);

@@ -1,6 +1,91 @@
 import axios from "axios";
 import React, { useState } from "react";
 
+interface DetailedInfo {
+  firstName?: string;
+  LastName?: string;
+  dlId?: string;
+  phoneNumber?: string;
+  isEmailVerified?: boolean;
+  isPhoneNumberVerified?: boolean;
+  kyc?: string;
+  kycStep?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  registrationId?: string;
+  ambulanceType?: string;
+  vehicleNumber?: string;
+  model?: string;
+  insuranceNumber?: string;
+  esign_document?: {
+    status?: string;
+  };
+  driverDefaultLocation?: {
+    type?: string;
+    coordinates?: number[];
+  };
+  driversCurrentLocation?: {
+    type?: string;
+    coordinates?: number[];
+  };
+  address?: {
+    placeName?: string;
+    placeAddress?: string;
+    alternateName?: string | null;
+    eLoc?: string | null;
+    coordinates?: {
+      type: string;
+      coordinates: number[];
+    };
+  };
+  defaultLocation?: {
+    type?: string;
+    coordinates?: number[];
+  };
+  [key: string]: unknown; // Allow additional properties
+}
+
+interface KycDetails {
+  aadhaar_detail?: any;
+  pan_detail?: any;
+  dl_detail?: any;
+  bank_detail?: any;
+  rc_detail?: any;
+  isEmailVerified?: boolean;
+  vehicleNumber?: string;
+  model?: string;
+  reg_no?: string;
+  vehicle_number?: string;
+  owner?: string;
+  owner_count?: string;
+  vehicle_manufacturer_name?: string;
+  vehicle_colour?: string;
+  type?: string;
+  class?: string;
+  chassis?: string;
+  engine?: string;
+  reg_date?: string;
+  rc_expiry_date?: string;
+  rc_status?: string;
+  status?: string;
+  vehicle_category?: string;
+  vehicle_seat_capacity?: string;
+  vehicle_cubic_capacity?: string;
+  gross_vehicle_weight?: string;
+  unladen_weight?: string;
+  vehicle_insurance_company_name?: string;
+  vehicle_insurance_upto?: string;
+  vehicle_insurance_policy_number?: string;
+  pucc_number?: string;
+  pucc_upto?: string;
+  rc_financer?: string;
+  verification_id?: string;
+  reference_id?: string;
+  ambulanceId?: string;
+  [key: string]: any; // Allow additional properties
+}
+
 interface SideModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -8,9 +93,9 @@ interface SideModalProps {
   fieldValue: string;
   driverName: string;
   driverId: string;
-  kycDetails?: Record<string, any> | null;
+  kycDetails?: KycDetails | null;
   fieldType?: string;
-  detailedInfo?: Record<string, any> | null;
+  detailedInfo?: DetailedInfo | null;
   onApprovalUpdate?: () => void;
 }
 
@@ -368,7 +453,7 @@ const Sidemodal: React.FC<SideModalProps> = ({
                   </p>
                   <p>
                     <strong>Coordinates:</strong> [
-                    {detailedInfo.driverDefaultLocation.coordinates.join(", ")}]
+                    {detailedInfo.driverDefaultLocation.coordinates?.join(", ") || "N/A"}]
                   </p>
                 </div>
               )}
@@ -384,7 +469,7 @@ const Sidemodal: React.FC<SideModalProps> = ({
                   </p>
                   <p>
                     <strong>Coordinates:</strong> [
-                    {detailedInfo.driversCurrentLocation.coordinates.join(", ")}
+                    {detailedInfo.driversCurrentLocation.coordinates?.join(", ") || "N/A"}
                     ]
                   </p>
                 </div>
@@ -463,7 +548,7 @@ const Sidemodal: React.FC<SideModalProps> = ({
                   <p>Type: {detailedInfo.defaultLocation.type || "N/A"}</p>
                   <p>
                     Coordinates: [
-                    {detailedInfo.defaultLocation.coordinates.join(", ")}]
+                    {detailedInfo.defaultLocation.coordinates?.join(", ") || "N/A"}]
                   </p>
                 </div>
               </div>
