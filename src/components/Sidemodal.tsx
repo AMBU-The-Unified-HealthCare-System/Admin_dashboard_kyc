@@ -119,84 +119,76 @@ const Sidemodal: React.FC<SideModalProps> = ({
   if (!isOpen) return null;
 
   // Google Places API function
-  const fetchPlaces = async (Query: string) => {
-    try {
-      if (!import.meta.env.VITE_GOOGLE_PLACE_SEARCH_KEY) {
-        return null;
-      }
+  // const fetchPlaces = async (query: string) => {
+  //   try {
+  //     const apiKey = import.meta.env.VITE_GOOGLE_PLACE_SEARCH_KEY;
+  //     if (!apiKey) {
+  //       console.error("Google Places API key is missing");
+  //       return null;
+  //     }
 
-      // Step 1: Get place suggestions
-      // const proxyUrl = 'https://api.allorigins.win/raw?url=';
+  //     // Step 1: Autocomplete API
+  //     const autocompleteResponse = await axios.get(
+  //       "https://maps.googleapis.com/maps/api/place/autocomplete/json",
+  //       {
+  //         params: {
+  //           input: query,
+  //           key: apiKey,
+  //         },
+  //       }
+  //     );
 
-      const autocompleteResponse = await axios.get(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json`,
-        {
-          params: {
-            input: Query,
-            key: import.meta.env.VITE_GOOGLE_PLACE_SEARCH_KEY,
-          },
-        }
-      );
+  //     const predictions = autocompleteResponse.data.predictions;
+  //     if (!predictions || predictions.length === 0) {
+  //       console.warn("No predictions found for input:", query);
+  //       return null;
+  //     }
 
-      console.log(
-        "Google Places Autocomplete Response:",
-        autocompleteResponse.data
-      );
+  //     const mostRelevant = predictions[0];
+  //     console.log("Most relevant prediction:", mostRelevant);
 
-      if (
-        !autocompleteResponse.data.predictions ||
-        autocompleteResponse.data.predictions.length === 0
-      ) {
-        console.error("No predictions found in Google Places API response");
-        return null;
-      }
+  //     // Step 2: Place Details API (geometry only)
+  //     const detailsResponse = await axios.get(
+  //       "https://maps.googleapis.com/maps/api/place/details/json",
+  //       {
+  //         params: {
+  //           place_id: mostRelevant.place_id,
+  //           fields: "geometry",
+  //           key: apiKey,
+  //         },
+  //       }
+  //     );
 
-      const most_relevant = autocompleteResponse.data.predictions[0];
-      console.log("most_relevant", JSON.stringify(most_relevant, null, 2));
+  //     const location = detailsResponse.data.result?.geometry?.location;
 
-      // Step 2: Get detailed place information including coordinates
-      const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${
-        most_relevant.place_id
-      }&fields=geometry&key=${import.meta.env.VITE_GOOGLE_PLACE_SEARCH_KEY}`;
+  //     const coordinates: {
+  //       type: "Point";
+  //       coordinates: [number, number] | [];
+  //     } = {
+  //       type: "Point",
+  //       coordinates: location ? [location.lng, location.lat] : [],
+  //     };
 
-      const detailsResponse = await axios.get(encodeURIComponent(detailsUrl));
+  //     if (location) {
+  //       console.log("Coordinates found:", coordinates);
+  //     } else {
+  //       console.warn("No location found in details response");
+  //     }
 
-      console.log("Google Places Details Response:", detailsResponse.data);
+  //     const formattedAddress = {
+  //       placeName: mostRelevant.structured_formatting.main_text,
+  //       placeAddress: mostRelevant.description,
+  //       alternateName: null,
+  //       eLoc: mostRelevant.place_id,
+  //       coordinates,
+  //     };
 
-      let coordinates: { type: string; coordinates: [number, number] | [] } = {
-        type: "Point",
-        coordinates: [], // Default coordinates as fallback
-      };
-
-      // Extract actual coordinates if available
-      if (
-        detailsResponse.data.result &&
-        detailsResponse.data.result.geometry &&
-        detailsResponse.data.result.geometry.location
-      ) {
-        const location = detailsResponse.data.result.geometry.location;
-        coordinates = {
-          type: "Point",
-          coordinates: [location.lng, location.lat], // [longitude, latitude]
-        };
-        console.log("Actual coordinates found:", coordinates);
-      } else {
-        console.log("Using default coordinates");
-      }
-
-      const formatted_address = {
-        placeName: most_relevant.structured_formatting.main_text,
-        placeAddress: most_relevant.description,
-        alternateName: null,
-        eLoc: most_relevant.place_id,
-        coordinates: coordinates,
-      };
-      return formatted_address;
-    } catch (error) {
-      console.error("Error in fetchPlaces:", error);
-      return null;
-    }
-  };
+  //     return formattedAddress;
+  //   } catch (error) {
+  //     console.error("Error in fetchPlaces:", error);
+  //     return null;
+  //   }
+  // };
 
   // Map fieldType to database field names
   const getApprovalFieldName = (fieldType: string) => {
@@ -230,8 +222,7 @@ const Sidemodal: React.FC<SideModalProps> = ({
 
     setIsUpdatingAddress(true);
     try {
-      // Use Google Places API to get formatted address
-      const formattedAddress = await fetchPlaces(editedAddress.trim());
+      const formattedAddress = editedAddress.trim();
 
       if (!formattedAddress) {
         throw new Error(

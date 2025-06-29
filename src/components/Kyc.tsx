@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 const KYCForm = () => {
 
   const [phone, setPhone] = useState("");
-  const [userType, setUserType] = useState("single"); // "single" or "fleet"
+  // const [userType, setUserType] = useState("single"); // "single" or "fleet"
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [phoneotp, setPhoneOtp] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
 
   const handleGetOtp = () => {
@@ -29,7 +29,7 @@ const KYCForm = () => {
     }
     else {
       setError("");
-      navigate("/dashboard", { state: { userType } });
+      // navigate("/dashboard", { state: { userType } });
     }
   };
 
@@ -39,7 +39,7 @@ const KYCForm = () => {
         <>
           <div className="flex flex-col gap-4">
             {/* User Type Dropdown */}
-            <div className="flex flex-col gap-2">
+            {/* <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-gray-700">User Type</label>
               <select
                 value={userType}
@@ -49,7 +49,7 @@ const KYCForm = () => {
                 <option value="single">Single User</option>
                 <option value="fleet">Fleet Owner</option>
               </select>
-            </div>
+            </div> */}
 
             <div className="flex items-center">
               <div className="border-2 border-[#DB5353] text-[#F95D5D] px-3 py-2 rounded-l-md">
