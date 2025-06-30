@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 // import { useNavigate } from "react-router-dom";
 const KYCForm = () => {
 
@@ -7,7 +8,7 @@ const KYCForm = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [phoneotp, setPhoneOtp] = useState("");
   const [error, setError] = useState("");
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
 
   const handleGetOtp = () => {
@@ -29,7 +30,7 @@ const KYCForm = () => {
     }
     else {
       setError("");
-      // navigate("/dashboard", { state: { userType } });
+      navigate("/dashboard");
     }
   };
 
