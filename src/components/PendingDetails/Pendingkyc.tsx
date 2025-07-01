@@ -68,7 +68,7 @@ const DriverDetailsKYC: React.FC<PendingkycProps> = ({
     driverId: string;
     kycDetails: Record<string, unknown> | undefined;
     fieldType: string;
-    detailedInfo?: Record<string, any> | null;
+    detailedInfo?: Record<string, unknown> | null;
     ownerType: string;
   }>({
     isOpen: false,

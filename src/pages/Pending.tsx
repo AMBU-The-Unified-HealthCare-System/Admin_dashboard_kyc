@@ -11,7 +11,7 @@ const Pending = () => {
   
   const [appliedFilters, setAppliedFilters] = useState({
     searchTerm: "",
-    entries: 3,
+    entries: 12,
     selectedDate: null as Date | null,
   });
 
